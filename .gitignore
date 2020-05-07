@@ -1,0 +1,11 @@
+.idea
+**/CMakeFiles/**
+**/Makefile
+**/CmakeCache.txt
+**/cmake_install.cmake
+**/CourseWork.cbp
+**/cmake-build-*/**
+
+# Project exclude paths
+/debug/
+/release/
