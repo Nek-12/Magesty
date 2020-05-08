@@ -1,11 +1,14 @@
 #pragma once
-//
-// Created by ender on 08-May-20.
-//
 #include <fstream>
 #include <chrono>
 #include <iostream>
 #include <utility>
+#include <SFML/Graphics.hpp>
+extern std::wstring path;
+
+
+
+
 class Log;
 extern Log* log;
 
@@ -32,7 +35,7 @@ public:
 
     void flush() {
         f.close();
-        f.open(fname, std::fstream::out | std::fstream::trunc | std::fstream::in | std::fstream::ate);
+        f.open(fname, std::fstream::out | std::fstream::trunc | std::fstream::in);
         put("LOG FLUSHED");
     }
     void print() {
@@ -51,7 +54,7 @@ private:
         _put(args...);
     }
     explicit Log(std::string  name) : fname(std::move(name)), f(fname, std::fstream::out | std::fstream::in | std::fstream::ate) {
-        put("Started session");
+        put("//////////////////////////////Started log session//////////////////////////////");
     }
     std::string fname;
     std::fstream f;
