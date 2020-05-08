@@ -1,14 +1,18 @@
 
 #include "misc.h"
 std::wstring path; //path to the program folder
+Data* data = nullptr;
 Log* log = nullptr;
 int wmain(int, wchar_t** argv)
 {
+    log = Log::init(L"log.txt");
+    log->flush();
     path = argv[0];
     path = path.erase(path.find_last_of('\\') + 1); //Makes 'path' be the path to the app folder, removing program name
-    log = Log::init("log.txt");
-    log->print();
-    log->flush();
+    log->put("The path is", path);
+    data = Data::init();
+    data->load();
+    log->put("Loaded data from files");
     sf::RenderWindow window(sf::VideoMode(1280, 720), "Ninja");
     window.setVerticalSyncEnabled(true);
     sf::Image icon;
@@ -16,7 +20,6 @@ int wmain(int, wchar_t** argv)
     window.setIcon(icon.getSize().x,icon.getSize().y,icon.getPixelsPtr());
     sf::CircleShape shape(100.f);
     shape.setFillColor(sf::Color::Green);
-
     while (window.isOpen())
     {
         sf::Event event;
@@ -30,6 +33,7 @@ int wmain(int, wchar_t** argv)
         window.draw(shape);
         window.display();
     }
-
+    data->save();
+    log->put("Successfully reached end of the program");
     return 0;
 }

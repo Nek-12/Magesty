@@ -1,3 +1,4 @@
+#cmake and CLion trash
 .idea
 **/CMakeFiles/**
 **/Makefile
@@ -8,3 +9,7 @@
 # Project exclude paths
 /debug/
 /release/
+
+# No committing logs, exe
+**/log.txt
+**/ninja.txt

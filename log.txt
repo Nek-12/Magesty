@@ -1,2 +1,8 @@
-Fri May 08 19:19:57 2020
+Fri May 08 19:54:22 2020
  | LOG FLUSHED
+Fri May 08 19:54:22 2020
+ | The path is C:\Users\ender\Dev\ninja\
+Fri May 08 19:54:22 2020
+ | Loaded data from files
+Fri May 08 19:54:52 2020
+ | Successfully reached end of the program

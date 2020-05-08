@@ -4,13 +4,12 @@
 #include <iostream>
 #include <utility>
 #include <SFML/Graphics.hpp>
+#include "Data.h"
 extern std::wstring path;
-
-
-
-
 class Log;
 extern Log* log;
+
+
 
 inline char* getCurTime() {
     auto t = std::chrono::system_clock::now();
@@ -21,7 +20,11 @@ inline char* getCurTime() {
 //NO SPACES REQUIRED
 class Log {
 public:
-    static Log* init(const std::string& filename) {
+    Log() = delete;
+    Log(Log const&) = delete; //No copying, no moving!
+    void operator=(Log const&) = delete; //No assigning!
+
+    static Log* init(const std::wstring& filename) {
         static Log instance(filename);
         return &instance;
     }
@@ -35,7 +38,7 @@ public:
 
     void flush() {
         f.close();
-        f.open(fname, std::fstream::out | std::fstream::trunc | std::fstream::in);
+        f.open(fname.c_str(), std::fstream::out | std::fstream::trunc | std::fstream::in);
         put("LOG FLUSHED");
     }
     void print() {
@@ -53,10 +56,10 @@ private:
         f << t << " ";
         _put(args...);
     }
-    explicit Log(std::string  name) : fname(std::move(name)), f(fname, std::fstream::out | std::fstream::in | std::fstream::ate) {
+    explicit Log(std::wstring  name) : fname(std::move(name)), f(fname.c_str(), std::fstream::out | std::fstream::in | std::fstream::ate) {
         put("//////////////////////////////Started log session//////////////////////////////");
     }
-    std::string fname;
-    std::fstream f;
+    std::wstring fname;
+    std::wfstream f;
 };
 
