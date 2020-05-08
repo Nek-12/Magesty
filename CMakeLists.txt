@@ -12,5 +12,5 @@ set(SFML_DIR "./lib/cmake/SFML")
 
 find_package(SFML 2.5 COMPONENTS system window graphics network audio REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
-add_executable(ninja main.cpp)
+add_executable(ninja main.cpp misc.h util.cpp)
 target_link_libraries(ninja sfml-system sfml-window sfml-graphics sfml-network sfml-audio)

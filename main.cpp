@@ -1,8 +1,10 @@
 #include <SFML/Graphics.hpp>
-
+#include "misc.h"
+Log* log = nullptr;
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(200, 200), "SFML works!");
+
+    sf::RenderWindow window(sf::VideoMode(1280, 720), "Ninja");
     sf::CircleShape shape(100.f);
     shape.setFillColor(sf::Color::Green);
 
