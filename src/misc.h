@@ -1,50 +1,61 @@
 #pragma once
 #include <fstream>
+#include <cstring>
 #include <chrono>
 #include <iostream>
 #include <utility>
+#include <filesystem>
 #include <SFML/Graphics.hpp>
 #include "Data.h"
-extern std::wstring path;
+extern std::string path;
 class Log;
-extern Log* log;
+extern Log* plog;
 
+struct log_timer { explicit log_timer() noexcept = default; };
 
-
-inline char* getCurTime() {
-    auto t = std::chrono::system_clock::now();
-    std::time_t ttime = std::chrono::system_clock::to_time_t(t);
-    return std::ctime(&ttime);
-}
-//USAGE: log->put("Message part 1",someString,"message end", ...);
+//USAGE: plog->put("Message part 1",someString,"message end", ...);
+//OR: *plog << Log::timer << "Message:" << msg << '\n';
 //NO SPACES REQUIRED
+
 class Log {
+    template <typename T>
+    friend Log& operator<<(Log& p,const T& t) {
+        p.f << t << " ";
+        return p;
+    }
+    friend Log& operator<<(Log& p, log_timer&) {
+        p.f << getCurTime() << " | ";
+        return p;
+    }
 public:
+    static log_timer timer;
     Log() = delete;
     Log(Log const&) = delete; //No copying, no moving!
     void operator=(Log const&) = delete; //No assigning!
-
-    static Log* init(const std::wstring& filename) {
+    static Log* init(const std::string& filename) {
         static Log instance(filename);
         return &instance;
     }
-
     template<typename ...Args>
     void put(const Args& ...args) { //first call
-
         f << getCurTime() << " | ";
         _put(args...);
     }
 
     void flush() {
         f.close();
-        f.open(fname.c_str(), std::fstream::out | std::fstream::trunc | std::fstream::in);
-        put("LOG FLUSHED");
+        f.open(std::filesystem::path(fname), std::fstream::out | std::fstream::trunc | std::fstream::in);
+        put("-------------| Log flushed |-------------");
     }
     void print() {
         f.seekg(std::fstream::beg);
         std::cout << f.rdbuf();
         f.seekg(std::fstream::end);
+    }
+    static char* getCurTime() {
+        auto t = std::chrono::system_clock::now();
+        std::time_t ttime = std::chrono::system_clock::to_time_t(t);
+        return std::ctime(&ttime);
     }
 private:
     template<typename T>
@@ -56,10 +67,14 @@ private:
         f << t << " ";
         _put(args...);
     }
-    explicit Log(std::wstring  name) : fname(std::move(name)), f(fname.c_str(), std::fstream::out | std::fstream::in | std::fstream::ate) {
-        put("//////////////////////////////Started log session//////////////////////////////");
+    explicit Log(std::string  name) : fname(std::move(name)), f(std::filesystem::path(fname), std::fstream::out | std::fstream::ate) {
+        if (!f) throw std::runtime_error("Error opening log file");
+        put(" -------------| Started log session |------------- ");
     }
-    std::wstring fname;
-    std::wfstream f;
+    ~Log() {
+        put("-------------| The program was closed |-------------");
+    }
+    std::string fname;
+    std::fstream f;
 };
 
