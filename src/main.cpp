@@ -3,7 +3,7 @@
 std::string path; //path to the program folder
 Data* data = nullptr;
 Log* plog = nullptr;
-
+log_timer Log::timer;
 int main(int, char** argv)
 {
     plog = Log::init("log.txt");
