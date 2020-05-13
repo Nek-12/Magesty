@@ -11,5 +11,6 @@
 /release/
 
 # No committing logs, exe
-**/log.txt
-**/ninja.txt
+log.txt
+ninja.exe
+/SFML-2.5.1

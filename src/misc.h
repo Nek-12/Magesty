@@ -14,20 +14,24 @@ extern Log* plog;
 struct log_timer { explicit log_timer() noexcept = default; };
 
 //USAGE: plog->put("Message part 1",someString,"message end", ...);
-//OR: *plog << Log::timer << "Message:" << msg << '\n';
+//OR: *plog << Log::timer << "Message:" << msg << [ '\n' or std::endl ];
 //NO SPACES REQUIRED
 
 class Log {
-    template <typename T>
-    friend Log& operator<<(Log& p,const T& t) {
-        p.f << t << " ";
-        return p;
-    }
-    friend Log& operator<<(Log& p, log_timer&) {
-        p.f << getCurTime() << " | ";
-        return p;
-    }
 public:
+    template <typename T>
+    Log& operator<<(const T& t) {
+        f << t;
+        return *this;
+    }
+    Log& operator<<( log_timer&) {
+        f << getCurTime() << " | ";
+        return *this;
+    }
+    Log& operator<<(std::ostream& (*os)(std::ostream&)) {
+        f << os;
+        return *this;
+    }
     static log_timer timer;
     Log() = delete;
     Log(Log const&) = delete; //No copying, no moving!

@@ -1,9 +1,10 @@
-Wed May 13 20:29:18 2020
+Wed May 13 20:41:46 2020
  | -------------| Log flushed |-------------
-Wed May 13 20:29:18 2020
- | The path is C:\Users\ender\Dev\ninja\ Wed May 13 20:29:18 2020
+Wed May 13 20:41:46 2020
+ | The path is C:\Users\ender\Dev\ninja\ 
+Wed May 13 20:41:46 2020
  | Loaded data from files
-Wed May 13 20:29:20 2020
+Wed May 13 20:41:48 2020
  | Successfully reached end of the program
-Wed May 13 20:29:20 2020
+Wed May 13 20:41:48 2020
  | -------------| The program was closed |-------------

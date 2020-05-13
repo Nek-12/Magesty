@@ -10,7 +10,7 @@ int main(int, char** argv)
     plog->flush();
     path = argv[0];
     path = path.erase(path.find_last_of('\\') + 1); //Makes 'path' be the path to the app folder, removing program name
-    *plog << Log::timer << "The path is" << path;
+    *plog << Log::timer << "The path is" << path << std::endl;
     data = Data::init();
     data->load();
     plog->put("Loaded data from files");
