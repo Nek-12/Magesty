@@ -16,5 +16,4 @@ public:
     void save() {}
 private:
     Data() = default;
-
 };
