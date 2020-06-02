@@ -1,4 +1,3 @@
-
 #include "misc.h"
 std::string path; //path to the program folder
 Data* data = nullptr;
@@ -23,7 +22,7 @@ int main(int, char** argv)
     shape.setFillColor(sf::Color::Green);
     while (window.isOpen())
     {
-        sf::Event event;
+        sf::Event event{};
         while (window.pollEvent(event))
         {
             if (event.type == sf::Event::Closed)

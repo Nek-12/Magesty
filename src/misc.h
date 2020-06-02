@@ -21,7 +21,7 @@ class Log {
 public:
     template <typename T>
     Log& operator<<(const T& t) {
-        f << t;
+        f << t << " ";
         return *this;
     }
     Log& operator<<( log_timer&) {

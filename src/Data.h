@@ -1,6 +1,3 @@
-//
-// Created by ender on 08-May-20.
-//
 #pragma once
 class Data;
 extern Data* data;
@@ -18,6 +15,6 @@ public:
     void load() {}
     void save() {}
 private:
-
     Data() = default;
+
 };
