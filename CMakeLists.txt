@@ -12,5 +12,5 @@ set(SFML_DIR "./lib/cmake/SFML")
 
 find_package(SFML 2.5 COMPONENTS system window graphics network audio REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
-add_executable(ninja src/main.cpp src/misc.h src/util.cpp src/Object.cpp src/Object.h src/Data.cpp src/Data.h)
+add_executable(ninja src/main.cpp src/misc.h src/util.cpp src/Object.cpp src/Object.h src/Data.cpp src/Data.h src/Player.h src/Player.cpp src/Entity.h src/Background.h src/GUI.h src/Skills.h src/Skills.cpp src/Boss.h src/Boss.cpp src/Entity.cpp)
 target_link_libraries(ninja sfml-system sfml-window sfml-graphics sfml-network sfml-audio)
