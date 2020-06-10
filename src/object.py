@@ -1,3 +1,7 @@
+from src.game import *
+from src.data import *
+
+
 class Object:
     """Any object in the game"""
 
@@ -39,3 +43,8 @@ class GUI(Object):
         super().__init__(sprite, x, y, angle)
         self.on_click_action = on_click_action
         self.on_hover_action = on_hover_action
+
+
+class Player(Entity):
+    def __init__(self, x, y):
+        super().__init__(game.data.player_sprite, x, y, game.data.player_max_hp, game.data.player_defence)

@@ -1,7 +1,4 @@
-import pygame
-import sys
-from src.data import *
-from src.object import *
+from src.util import *
 
 
 class Game:
