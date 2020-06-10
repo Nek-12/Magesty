@@ -1,2 +1,3 @@
-THIS IS AN INCREDIBLE GAME ON SFML  
-IT FEATURES NINJAS AND SLOWMO  
+# Description
+This is a learning project to create the game on python using pygame
+It's in early development stage. Nope, you can't play it yet.
