@@ -18,9 +18,9 @@ public:
 protected: //TODO: protected?
     void setSprite(sf::Sprite& s) { sprite = s; }
     virtual void move() = 0; //logic to handle AI
-    void tp(int toX, int toY, bool isRelative = false) { /*TODO:...*/ } //teleport forcibly
+    void tp(int toX, int toY, bool isRelative = false); //teleport forcibly
 
-private:
+protected:
     sf::Sprite sprite;//TODO: container of sprites for animation?
     int x;
     int y;

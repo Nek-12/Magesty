@@ -1,4 +1,5 @@
 #include "misc.h"
+#include "Player.h"
 std::string path; //path to the program folder
 Data* data = nullptr;
 Log* plog = nullptr;
@@ -22,25 +23,28 @@ int main(int, char** argv)
     icon.loadFromFile("./res/icon.png"); //Sets the app icon
     window.setIcon(icon.getSize().x,icon.getSize().y,icon.getPixelsPtr());
 
-    sf::CircleShape shape(100.f);
-    shape.setFillColor(sf::Color::Green);
+    Player::init();
+    sf::Texture t1;
+    t1.loadFromFile("res/Tiles/tile_01.png");
+    Player player(sf::Sprite(t1), 0u, 0u , 0.0f, 100, 10.0f);
 
     sf::Clock clock;
 
     while (window.isOpen())
     {
 
-        sf::Time elapsedTime = clock.restart();//to measure time between frames TODO: Global?
+        uint32_t elapsedTime = clock.restart().asMilliseconds();//to measure time between frames
         sf::Event event{};
 
         while (window.pollEvent(event))
         {
+            player.handleEvent();
             if (event.type == sf::Event::Closed)
                 window.close();
         }
 
         window.clear();
-        window.draw(shape);
+        player.Draw(&window);
         window.display();
     }
 

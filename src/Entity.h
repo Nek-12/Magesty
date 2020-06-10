@@ -2,7 +2,7 @@
 
 #include "Object.h"
 
-class Entity: private Object { //Something alive
+class Entity: protected Object { //Something alive
 public:
     Entity() = delete;
     explicit Entity(const unsigned max_hp, const float defence = 0): max_hp(max_hp), defence(defence) {}
@@ -16,7 +16,7 @@ protected:
     //Doesnt' override move(), makes it pure virtual
     virtual void AI() = 0;
 
-private:
+protected:
     unsigned max_hp;
     unsigned hp = max_hp;
     float defence; //Defines how hp changes with damage
