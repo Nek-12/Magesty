@@ -3,7 +3,10 @@ from src.util import *
 
 class Game:
     """Class to make all the necessary variables visible"""
-
+    # TODO: Change cursor
+    # TODO: Change icon : pygame.display.set_icon
+    # TODO: Set font
+    # TODO: pygame.display.toggle_fullscreen
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((1280, 720))  # get the screen

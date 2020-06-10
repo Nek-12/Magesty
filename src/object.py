@@ -1,5 +1,4 @@
 from src.game import *
-from src.data import *
 
 
 class Object:
@@ -48,3 +47,4 @@ class GUI(Object):
 class Player(Entity):
     def __init__(self, x, y):
         super().__init__(game.data.player_sprite, x, y, game.data.player_max_hp, game.data.player_defence)
+# TODO: Don't go up the hierarchy
