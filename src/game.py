@@ -9,14 +9,13 @@ from src.util import *
 
 class Game:
     """Main game class"""
-
     def __init__(self):
         pygame.init()
         infos = pygame.display.Info()
         screen_width, screen_height = infos.current_w, infos.current_h
         self.screen = pygame.display.set_mode((screen_width, screen_height), pygame.FULLSCREEN)  # get the screen
         pygame.display.set_caption("Ninja")
-        pygame.display.set_icon(pygame.image.load("../res/icon.png").convert())
+        pygame.display.set_icon(pygame.image.load("../res/img/icon.png").convert())
 
         self.bg = 11, 102, 32
         self.time = 1.0  # Adjust time speed

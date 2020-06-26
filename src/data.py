@@ -6,7 +6,7 @@ class Data:
         pass
         # Mock-up entries before settings are implemented
         self.player_max_hp = 100
-        self.player_sprite = pygame.image.load("../res/ninja.png")
+        self.player_sprite = pygame.image.load("../res/img/ninja.png")
         self.player_defence = 1
 
     def save(self):
