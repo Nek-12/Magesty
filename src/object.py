@@ -27,6 +27,8 @@ class Entity(Object):
         self.max_hp = max_hp
         self.armor = armor
         self.speed = speed
+        self.dx = 0
+        self.dy = 0
         if hp:
             self.hp = hp
         else:
@@ -36,12 +38,11 @@ class Entity(Object):
         self.hp = 0
 
     def update(self):
-        self.rect.x = self.x
-        self.rect.y = self.y
+        self.rect.x += self.x + self.dx
+        self.rect.y += self.y + self.dy
 
 class GUI(Object):
     """Interface elements"""
-
     def __init__(self, sprite, x, y, on_click_action, on_hover_action, angle=0.0):
         super().__init__(sprite, x, y, angle)
         self.on_click_action = on_click_action

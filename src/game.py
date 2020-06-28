@@ -2,7 +2,6 @@ from src.util import *
 from src.data import *
 from src.object import *
 
-
 # Note: Always use .convert() when loading images from the disk
 # Note: Scroll by several pixels per update. The flip() method is very slow.
 # Note: No cyclic dependencies, no going up hierarchy
@@ -14,62 +13,60 @@ from src.object import *
 # TODO: Add dependencies on time
 # TODO: Add normal speed config for player
 
+
 class Game:
     """Main game class"""
-
     def __init__(self):
-        pygame.init()
-        infos = pygame.display.Info()
+        pg.init()
+        infos = pg.display.Info()
         self.screen_width, self.screen_height = infos.current_w, infos.current_h
-        self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.FULLSCREEN)
+        self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.FULLSCREEN)
         self.screen_rect = self.screen.get_rect()
-        pygame.display.set_caption("Ninja")
-        pygame.display.set_icon(pygame.image.load("../res/img/icon.png").convert())
-
+        pg.display.set_caption("Ninja")
+        pg.display.set_icon(pg.image.load("../res/img/icon.png").convert())
+        self.data = Data(self, "settings.json")
         self.bg = 11, 102, 32  # RGB
         self.time = 1.0  # Adjust time speed
-        self.data = Data("settings.json")
         self.player = Player(self.data.player_sprite,
                              self.screen_rect.x,
                              self.screen_rect.y,
                              self.data.player_max_hp,
                              self.data.player_defence,
-                             10)
-        self.clock = pygame.time.Clock()
-        pygame.key.set_repeat(1, 10)  # Repeat KEYDOWN events every 10 ms instead of one-time
+                             3)
+        self.clock = pg.time.Clock()
 
     def main(self):
         """Run the game"""
         while True:
             self._process_events()
             # After every event
+            
             self.player.update()
             self._draw()
-            self.clock.tick(self.data.fps)  # <fps> times per second
+            self.clock.tick(self.data.fps)
 
     def _process_events(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        """Handle the event queue"""
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
                 sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_F12:
-                    sys.exit('KILLED')
-                elif event.key == pygame.K_d:
-                    self.player.x += self.player.speed
-                elif event.key == pygame.K_a:
-                    self.player.x -= self.player.speed
-                elif event.key == pygame.K_w:
-                    self.player.y -= self.player.speed  # TODO: Handle inverted values
-                elif event.key == pygame.K_s:
-                    self.player.y += self.player.speed
-                elif event.key == pygame.K_F11:
-                    toggle_fullscreen(self)
+            elif event.type == pg.KEYDOWN:
+                try:
+                    self.data.keydown_actions[event.key]()  # execute specified keydown actions
+                except KeyError:
+                    pass
+            elif event.type == pg.KEYUP:
+                try:
+                    self.data.keyup_actions[event.key]()
+                except KeyError:
+                    pass
             # On every event
 
     def _draw(self):
+        """Draw every object and refresh the screen"""
         self.screen.fill(self.bg)  # blank the screen
         self.screen.blit(self.player.sprite, self.player.rect)
-        pygame.display.flip()
+        pg.display.flip()
 
 
 if __name__ == '__main__':
