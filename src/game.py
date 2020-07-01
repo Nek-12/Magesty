@@ -9,8 +9,6 @@ from src.object import *
 # TODO: Set font
 # TODO: Add exception handling for files
 # TODO: Handle the difficulties with object size etc depending on screen size. Add zoom?
-# TODO: Handle the framerate x movement problem. a) cap fps b) fps-independent
-# TODO: Add dependencies on time
 # TODO: Add normal speed config for player
 
 
@@ -21,18 +19,18 @@ class Game:
         infos = pg.display.Info()
         self.screen_width, self.screen_height = infos.current_w, infos.current_h
         self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.FULLSCREEN)
-        self.screen_rect = self.screen.get_rect()
         pg.display.set_caption("Ninja")
         pg.display.set_icon(pg.image.load("../res/img/icon.png").convert())
         self.data = Data(self, "settings.json")
         self.bg = 11, 102, 32  # RGB
         self.time = 1.0  # Adjust time speed
         self.player = Player(self.data.player_sprite,
-                             self.screen_rect.x,
-                             self.screen_rect.y,
+                             0,
+                             0,
                              self.data.player_max_hp,
                              self.data.player_defence,
-                             3)
+                             7)
+        self.view = View(self.player, self.screen)
         self.clock = pg.time.Clock()
 
     def main(self):
