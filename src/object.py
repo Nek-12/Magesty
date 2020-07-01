@@ -1,16 +1,17 @@
 from src.util import *
 
 
-class Object:
+class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and rectangle
     """Physics object"""
-
     def __init__(self, sprite, x, y, angle=0.0):
         """sprite is a tuple of pygame.sprite and pygame.rect, x,y are global spawn coordinates, angle clockwise"""
+        super().__init__()
         self.x = x  # Global
         self.y = y  # Global
         self.angle = angle
         self.sprite = sprite[0]  # pygame.sprite
         self.rect = sprite[1]  # pygame.rect
+        # TODO: Figure the attributes the Sprite class has and don't duplicate them.
 
     def tp(self, to_x, to_y, is_relative=False):  # global
         if is_relative:
@@ -20,6 +21,11 @@ class Object:
             self.x = to_x
             self.y = to_y
 
+    def update(self, *args):
+
+    def kill(self):
+        # Whatever
+        super().kill() # Remove this object from ALL Groups it belongs to.
 
 class Entity(Object):
     """Has hp, armor, speed, max_hp, and sub-Object"""
@@ -39,10 +45,13 @@ class Entity(Object):
             self.hp = max_hp
 
     def kill(self):
-        self.hp = 0
+        self.hp = 0 #Kill the entity
 
-    def update(self):
+        super().kill()  # Kill the object
+
+    def update(self):  # overrides the Object.update() method
         """Movement and AI"""
+        super().update() # Call the Object update method
         if self.moving_u:
             self.rect.y -= self.speed
         if self.moving_d:

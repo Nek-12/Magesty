@@ -41,7 +41,7 @@ class Game:
             
             self.player.update()
             self._draw()
-            self.clock.tick(self.data.fps)
+            self.clock.tick(self.data.fps) # cap the fps
 
     def _process_events(self):
         """Handle the event queue"""
