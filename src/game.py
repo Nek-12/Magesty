@@ -40,8 +40,9 @@ class Game:
             # After every event
             
             self.player.update()
+            self.view.update()
             self._draw()
-            self.clock.tick(self.data.fps) # cap the fps
+            self.clock.tick(self.data.fps)  # cap the fps
 
     def _process_events(self):
         """Handle the event queue"""
@@ -65,7 +66,6 @@ class Game:
         self.screen.fill(self.bg)  # blank the screen
         self.screen.blit(self.player.sprite, self.player.rect)
         pg.display.flip()
-
 
 if __name__ == '__main__':
     game = Game()

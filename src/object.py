@@ -11,7 +11,7 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
         self.angle = angle
         self.sprite = sprite[0]  # pygame.sprite
         self.rect = sprite[1]  # pygame.rect
-        # TODO: Figure the attributes the Sprite class has and don't duplicate them.
+        # TODO: Figure out the attributes the Sprite class has and don't duplicate them.
 
     def tp(self, to_x, to_y, is_relative=False):  # global
         if is_relative:
@@ -21,11 +21,13 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
             self.x = to_x
             self.y = to_y
 
-    def update(self, *args):
+    def update(self, *args): # super().update does nothing but can be called on Groups
+        pass
 
     def kill(self):
         # Whatever
         super().kill() # Remove this object from ALL Groups it belongs to.
+
 
 class Entity(Object):
     """Has hp, armor, speed, max_hp, and sub-Object"""
@@ -45,7 +47,7 @@ class Entity(Object):
             self.hp = max_hp
 
     def kill(self):
-        self.hp = 0 #Kill the entity
+        self.hp = 0  # Kill the entity
 
         super().kill()  # Kill the object
 
@@ -86,7 +88,6 @@ class Player(Entity):
 
 class View:
     """Handling the contents of the screen"""
-
     def __init__(self, player, screen):
         self.player = player
         self.screen = screen
@@ -97,3 +98,12 @@ class View:
     def update(self):
         self.x = self.player.x  # The screen must always follow the player
         self.y = self.player.y  # Placeholder for an algorithm
+        # self.rect.center = (self.player.rect.x, self.player.rect.y)  # bind screen to player coords
+
+
+class Effect(Object):
+    """Spells, explosions, attacks etc."""
+# TODO: Implement animations (lists of sprites? Groups?)
+    def __init__(self, sprite, x, y, anim, angle=0.0, ):
+        """ anim must be a function to apply to the sprite"""
+        super().__init__(sprite, x, y, angle)

@@ -3,6 +3,7 @@ import sys
 import json
 import platform
 
+
 def load_sprite(name, colorkey=None):
     fullname = "../res/img/" + name
     try:
@@ -33,8 +34,15 @@ def load_sound(name):
     return sound
 
 
-def toggle_fullscreen():
+def toggle_fullscreen(game):
     if platform.system() == 'Linux':
         pg.display.toggle_fullscreen()
     else:
         game.screen = pg.display.set_mode((game.screen_width, game.screen_height))
+# TODO: Fix argument not resolved on Windows
+
+def rot_center(image, rect, angle):
+    """rotate an image while keeping its center"""
+    rot_image = pygame.transform.rotate(image, angle)
+    rot_rect = rot_image.get_rect(center=rect.center)
+    return rot_image,rot_rect
