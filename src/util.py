@@ -34,11 +34,11 @@ def load_sound(name):
     return sound
 
 
-def toggle_fullscreen(game):
+def toggle_fullscreen():
     if platform.system() == 'Linux':
         pg.display.toggle_fullscreen()
-    else:
-        game.screen = pg.display.set_mode((game.screen_width, game.screen_height))
+    # else:
+     #    game.screen = pg.display.set_mode((game.screen_width, game.screen_height))
 # TODO: Fix argument not resolved on Windows
 
 def rot_center(image, rect, angle):

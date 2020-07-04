@@ -24,7 +24,8 @@ class Game:
         pg.display.set_caption("Ninja")
         pg.display.set_icon(pg.image.load("../res/img/icon.png").convert())
         self.data = Data(self, "settings.json")
-        self.bg = 11, 102, 32  # RGB
+        self.bg, self.bg_rect = load_sprite("bg_test.png")
+        self.bg = pg.transform.smoothscale(self.bg, (1920, 1080))
         self.time = 1.0  # Adjust time speed
         self.player = Player(self.data.player_sprite,
                              0,
@@ -66,7 +67,7 @@ class Game:
 
     def _draw(self):
         """Draw every object and refresh the screen"""
-        self.screen.fill(self.bg)  # blank the screen
+        self._draw_bg()
         self.screen.blit(self.player.sprite, self.player.rect)
         self.print_text()
         pg.display.flip()
@@ -83,7 +84,10 @@ class Game:
         text = font.render('player coords ' + str(self.player.x) + '  ' + str(self.player.y), True, (0, 0, 0))
         self.screen.blit(text, (400, 300))
 
-
+    def _draw_bg(self):
+        self.screen.blit(self.bg, self.bg_rect)
+# TODO: Change the annoying return of load_sprite, load_sound
+# TODO: Implement background moving to respond to a view
 if __name__ == '__main__':
     game = Game()
     game.main()

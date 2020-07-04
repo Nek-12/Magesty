@@ -22,7 +22,7 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
             self.x = to_x
             self.y = to_y
 
-    def update(self, *args): # super().update does nothing but can be called on Groups
+    def update(self, *args):  # super().update does nothing but can be called on Groups
         pass
 
     def kill(self):
@@ -56,14 +56,13 @@ class Entity(Object):
         """Movement and AI"""
         super().update()  # Call the Object update method
         if self.moving_u:
-            self.rect.y -= self.speed
+            self.y -= self.speed
         if self.moving_d:
-            self.rect.y += self.speed
+            self.y += self.speed
         if self.moving_r:
-            self.rect.x -= self.speed
+            self.x -= self.speed
         if self.moving_l:
-            self.rect.x += self.speed
-        # TODO: Better algorithm?
+            self.x += self.speed
 
 
 class GUI(Object):
