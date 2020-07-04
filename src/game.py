@@ -2,6 +2,7 @@ from src.util import *
 from src.data import *
 from src.object import *
 
+
 # Note: Always use .convert() when loading images from the disk
 # Note: Scroll by several pixels per update. The flip() method is very slow.
 # Note: No cyclic dependencies, no going up hierarchy
@@ -14,11 +15,12 @@ from src.object import *
 
 class Game:
     """Main game class"""
+
     def __init__(self):
         pg.init()
         infos = pg.display.Info()
         self.screen_width, self.screen_height = infos.current_w, infos.current_h
-        self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.FULLSCREEN)
+        self.screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
         pg.display.set_caption("Ninja")
         pg.display.set_icon(pg.image.load("../res/img/icon.png").convert())
         self.data = Data(self, "settings.json")
@@ -29,18 +31,19 @@ class Game:
                              0,
                              self.data.player_max_hp,
                              self.data.player_defence,
-                             7)
+                             7,
+                             (self.screen_width, self.screen_height))
         self.view = View(self.player, self.screen)
         self.clock = pg.time.Clock()
+        self.mouse_pos = pg.mouse.get_pos()
 
     def main(self):
         """Run the game"""
         while True:
             self._process_events()
             # After every event
-            
-            self.player.update()
-            self.view.update()
+
+            self._update()
             self._draw()
             self.clock.tick(self.data.fps)  # cap the fps
 
@@ -65,7 +68,21 @@ class Game:
         """Draw every object and refresh the screen"""
         self.screen.fill(self.bg)  # blank the screen
         self.screen.blit(self.player.sprite, self.player.rect)
+        self.print_text()
         pg.display.flip()
+
+    def _update(self):
+        self.mouse_pos = pg.mouse.get_pos()
+        self.player.update()
+        self.player.rect.x, self.player.rect.y = self.view.update((self.screen_width, self.screen_height),
+                                                                  self.mouse_pos,
+                                                                  (self.player.rect.x, self.player.rect.y))
+
+    def print_text(self):
+        font = pg.font.Font(None, 20)
+        text = font.render('player coords ' + str(self.player.x) + '  ' + str(self.player.y), True, (0, 0, 0))
+        self.screen.blit(text, (400, 300))
+
 
 if __name__ == '__main__':
     game = Game()

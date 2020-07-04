@@ -3,6 +3,7 @@ from src.util import *
 
 class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and rectangle
     """Physics object"""
+
     def __init__(self, sprite, x, y, angle=0.0):
         """sprite is a tuple of pygame.sprite and pygame.rect, x,y are global spawn coordinates, angle clockwise"""
         super().__init__()
@@ -26,7 +27,7 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
 
     def kill(self):
         # Whatever
-        super().kill() # Remove this object from ALL Groups it belongs to.
+        super().kill()  # Remove this object from ALL Groups it belongs to.
 
 
 class Entity(Object):
@@ -53,7 +54,7 @@ class Entity(Object):
 
     def update(self):  # overrides the Object.update() method
         """Movement and AI"""
-        super().update() # Call the Object update method
+        super().update()  # Call the Object update method
         if self.moving_u:
             self.rect.y -= self.speed
         if self.moving_d:
@@ -76,10 +77,10 @@ class GUI(Object):
 
 
 class Player(Entity):
-    def __init__(self, sprite, x, y, max_hp, defence, speed):
+    def __init__(self, sprite, x, y, max_hp, defence, speed, res):
         super().__init__(sprite, x, y, max_hp, defence, speed)
-        self.rect.x = x
-        self.rect.x = y
+        self.rect.x = res[0] // 2 - sprite[0].get_width() // 2
+        self.rect.y = res[1] // 2 - sprite[0].get_height() // 2
         # TODO: remove usage of screen coords
 
     def update(self):
@@ -88,22 +89,41 @@ class Player(Entity):
 
 class View:
     """Handling the contents of the screen"""
+
     def __init__(self, player, screen):
         self.player = player
         self.screen = screen
         self.x = player.x
         self.y = player.y
         self.rect = screen.get_rect()
+        self.half_player_size = self.player.sprite.get_width() // 2, self.player.sprite.get_height() // 2
 
-    def update(self):
-        self.x = self.player.x  # The screen must always follow the player
-        self.y = self.player.y  # Placeholder for an algorithm
-        # self.rect.center = (self.player.rect.x, self.player.rect.y)  # bind screen to player coords
+    @staticmethod
+    def update(screen_size, mouse_pos, player_pos):
+        # TODO: make camera movement smoother
+        dx = mouse_pos[0] - screen_size[0] // 2
+        expected_x = screen_size[0] // 2 - dx // 2
+        if expected_x - player_pos[0] > 0:
+            if expected_x - player_pos[0] > 10:
+                x = player_pos[0] + 10
+            else:
+                x = expected_x
+        else:
+            if expected_x - player_pos[0] < -10:
+                x = player_pos[0] - 10
+            else:
+                x = expected_x
 
-
-class Effect(Object):
-    """Spells, explosions, attacks etc."""
-# TODO: Implement animations (lists of sprites? Groups?)
-    def __init__(self, sprite, x, y, anim, angle=0.0, ):
-        """ anim must be a function to apply to the sprite"""
-        super().__init__(sprite, x, y, angle)
+        dy = mouse_pos[1] - screen_size[1] // 2
+        expected_y = screen_size[1] // 2 - dy // 2
+        if expected_y - player_pos[1] > 0:
+            if expected_y - player_pos[1] > 10:
+                y = player_pos[1] + 10
+            else:
+                y = expected_y
+        else:
+            if expected_y - player_pos[1] < -10:
+                y = player_pos[1] - 10
+            else:
+                y = expected_y
+        return x, y
