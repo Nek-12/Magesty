@@ -2,32 +2,30 @@ from src.data import *
 from src.object import *
 from src.view import *
 from src.misc import *
+assert pg.version.ver[0] == str(2), "Pygame version not compatible with the game"
 
 # Note: Always use .convert() when loading images from the disk
 # Note: Scroll by several pixels per update. The flip() method is very slow.
 # Note: No cyclic dependencies, no going up hierarchy
 
 # TODO: Set font
-# TODO: Add exception handling for files
-# TODO: Handle the difficulties with object size etc depending on screen size. Add zoom?
-# TODO: Add normal speed config for owner
+# TODO: Handle the problem with Windows DPI scaling
+# TODO: Add normal speed config for player
 
-import pathlib
-print(pathlib.Path().absolute())
+
 class Game:
     """Main game class"""
-
     def __init__(self):
         pg.mixer.pre_init(44100)
         pg.init()
         pg.mixer.set_num_channels(32)
         infos = pg.display.Info()
         self.screen_width, self.screen_height = infos.current_w, infos.current_h
-        self.screen = pg.display.set_mode((self.screen_width, self.screen_height))
+        self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.SCALED)
         pg.display.set_caption("Ninja")
         pg.display.set_icon(load_image('icon.png')[0])
         self.bg, self.bg_rect = load_image("bg_test.png")
-        self.bg = pg.transform.scale2x(self.bg)
+        self.bg = pg.transform.scale2x(pg.transform.scale2x(self.bg))
         self.time = 1.0  # Adjust time speed
         self.data = Data(self, "settings.json")
         self.player = Player(self)
@@ -35,10 +33,12 @@ class Game:
         self.clock = pg.time.Clock()
         self.mouse_pos = pg.mouse.get_pos()
         self.objects = pg.sprite.Group()  # store ALL the objects in the game except single-instance ones
-        self.data.load(self)
 
     def main(self):
         """Run the game"""
+        self.data.load(self)
+        self.data.music.set_volume(0.3)
+        self.data.music.play(-1, 0, 1000)
         while True:
             self._process_events()
             # After every event
@@ -66,7 +66,7 @@ class Game:
     def _draw(self):
         """Draw every object and refresh the screen"""
         self._draw_bg()
-        self.player.blit()
+        self.player.blit(self.screen)
         self.print_text()
         pg.display.flip()
 
@@ -78,9 +78,9 @@ class Game:
     #                                                             (self.player.rect.x, self.player.rect.y))
 
     def print_text(self):
-        font = pg.font.Font(None, 20)
-        text = font.render('player coords ' + str(self.player.x) + '  ' + str(self.player.y), True, (0, 0, 0))
-        self.screen.blit(text, (400, 300))
+        font = pg.font.Font(None, 40)
+        text = font.render('player coords ' + str(self.player.x) + '  ' + str(self.player.y), True, (255, 255, 255))
+        self.screen.blit(text, (10, 10))
 
     def _draw_bg(self):
         self.screen.fill((0, 0, 0))  # fill the void

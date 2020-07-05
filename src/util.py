@@ -3,6 +3,7 @@ import sys
 import json
 import platform
 import os
+from random import randint
 
 DEFAULT_TIMING = 10
 TIMINGS_FILENAME = 'timings.txt'
@@ -59,7 +60,7 @@ def load_anim(folder, colorkey=None):
             raise IndexError(f"Timings don't match images in {path}")
     else:  # Use default
         print(f"Haven't found timings in {path} , using default")
-        timings = tuple([DEFAULT_TIMING]*len(filenames))  # create a default timings list
+        timings = tuple([DEFAULT_TIMING] * len(filenames))  # create a default timings list
     imgs = []
     # Make the timings list display frames to switch the image
     _sum = 0
@@ -71,3 +72,24 @@ def load_anim(folder, colorkey=None):
     for fname in filenames:
         imgs.append(load_image(f'{folder}/{fname}', colorkey)[0])
     return imgs, tuple(frames)
+
+
+def upscale_anim(anim, coefficient=2.0):
+    """upscale every frame in a list of images"""
+    if coefficient == 2.0:
+        for i in range(len(anim)):
+            anim[i] = pg.transform.scale2x(anim[i])
+    else:
+        for i in range(len(anim)):
+            base_rect = anim[i].get_rect()
+            anim[i] = pg.transform.smoothscale(anim[i], (base_rect.width * coefficient, base_rect.height * coefficient))
+    return anim
+
+
+def load_soundlist(folder, *args):
+    path = f'../res/sfx/{folder}'
+    filenames = os.listdir(path)
+    ret = []
+    for name in filenames:
+        ret.append(load_sound(f"{folder}/{name}"))
+    return ret

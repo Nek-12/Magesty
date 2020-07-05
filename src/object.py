@@ -28,6 +28,9 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
             self.image, self.rect = rot_center(self.image, self.rect, self.angle)  # Rotate
             self.angle = 0  # Stop rotating
 
+    def blit(self, screen):
+        screen.blit(self.image, self.rect)  # draw self
+
     def kill(self):
         # Whatever
         super().kill()  # Remove this object from ALL Groups it belongs to.
@@ -82,41 +85,48 @@ class Player(Entity):
         self.game = game
         data = self.game.data
         super().__init__(data.player_image, 0, 0, data.player_max_hp, data.player_defence, data.player_speed)
-        self.attack = Slash(self, data.slash_anim, data.slash_sound)  # Create an attack
+        self.slash = Slash(self, data.slash_anim, data.slash_sounds)  # Create an attack
         self.attack_sprite = data.player_attacking_sprite
 
     def update(self):
         super().update()
         self.rect.x, self.rect.y = self.x, self.y
-        if self.attack.slashing:
+        if self.slash.slashing:
             self.image = self.attack_sprite
         else:
             self.image = self.game.data.player_image
 
-    def blit(self):
-        self.game.screen.blit(self.image, self.rect)  # draw self
-        self.attack.blit(self.game.screen)  # draw the slash over self
+    def blit(self, screen):
+        super().blit(screen)
+        self.slash.blit(screen)  # draw the slash over self
 
-    def slash(self):
-        self.attack()
+
+class Crawler(Entity):
+    def __init__(self, sprite, x, y, max_hp, armor, speed, angle=0.0, hp=0):
+        super().__init__(sprite, x, y, max_hp, armor, speed, angle, hp)
+
+    def kill(self):
+        super().kill()
+
+    def update(self):
+        super().update()
 
 
 class Slash(Object):
     """Creates an attack for the entity"""
-
-    def __init__(self, owner, anim_tuple, sound=None):
+    def __init__(self, owner, anim_tuple, sounds=None):
         """Owner is the Entity doing a slash, anim_tuple is returned by load_anim"""
         self.anim = Animation(anim_tuple)  # Load an animation
         super().__init__(self.anim.image, owner.x, owner.y)  # first frame
         self.owner = owner  # store the reference
-        self.sound = sound
+        self.sounds_miss = SoundPack(sounds)
         self.angle = 0
         self.slashing = False
 
     def __call__(self):  # If the object is called
         if not self.slashing:
-            if self.sound:
-                self.sound.play()  # play the sound at the animation start
+            if self.sounds_miss:
+                self.sounds_miss.play_random()  # play the sound at the animation start
             self.slashing = True
             self.anim.restart()
 
