@@ -35,6 +35,7 @@ class Game:
         self.clock = pg.time.Clock()
         self.mouse_pos = pg.mouse.get_pos()
         self.objects = pg.sprite.Group()  # store ALL the objects in the game except single-instance ones
+        self.data.load(self)
 
     def main(self):
         """Run the game"""

@@ -82,20 +82,28 @@ class Player(Entity):
         self.game = game
         data = self.game.data
         super().__init__(data.player_image, 0, 0, data.player_max_hp, data.player_defence, data.player_speed)
-        self.slash = Slash(self, data.slash_anim, data.slash_sound)  # Create an attack
+        self.attack = Slash(self, data.slash_anim, data.slash_sound)  # Create an attack
+        self.attack_sprite = data.player_attacking_sprite
 
     def update(self):
         super().update()
         self.rect.x, self.rect.y = self.x, self.y
-        # Note: WIP
+        if self.attack.slashing:
+            self.image = self.attack_sprite
+        else:
+            self.image = self.game.data.player_image
 
     def blit(self):
         self.game.screen.blit(self.image, self.rect)  # draw self
-        self.slash.blit(self.game.screen)  # draw the slash over self
+        self.attack.blit(self.game.screen)  # draw the slash over self
+
+    def slash(self):
+        self.attack()
 
 
 class Slash(Object):
     """Creates an attack for the entity"""
+
     def __init__(self, owner, anim_tuple, sound=None):
         """Owner is the Entity doing a slash, anim_tuple is returned by load_anim"""
         self.anim = Animation(anim_tuple)  # Load an animation
