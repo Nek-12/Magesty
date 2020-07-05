@@ -2,14 +2,17 @@ import pygame as pg
 import sys
 import json
 import platform
+import os
+
+DEFAULT_TIMING = 10
+TIMINGS_FILENAME = 'timings.txt'
 
 
-def load_sprite(name, colorkey=None):
-    fullname = "../res/img/" + name
+def load_image(fname, colorkey=None):
     try:
-        image = pg.image.load(fullname)
+        image = pg.image.load(f"../res/img/{fname}")
     except pg.error as message:
-        print('Cannot load image:', name)
+        print('Cannot load image:', fname)
         raise SystemExit(message)
     image = image.convert()
     if colorkey is not None:
@@ -19,30 +22,50 @@ def load_sprite(name, colorkey=None):
     return image, image.get_rect()
 
 
-def load_sound(name):
-    class NoneSound:
-        def play(self): pass
-
-    if not pg.mixer:
-        return NoneSound()
-    fullname = "../res/sound/" + name
+def load_sound(fname):
     try:
-        sound = pg.mixer.Sound(fullname)
+        sound = pg.mixer.Sound(f"../res/sfx/{fname}")
     except pg.error as message:
-        print('Cannot load sound:', name)
         raise SystemExit(message)
     return sound
 
 
 def toggle_fullscreen():
+    """suppported only on linux"""
     if platform.system() == 'Linux':
         pg.display.toggle_fullscreen()
-    # else:
-     #    game.screen = pg.display.set_mode((game.screen_width, game.screen_height))
-# TODO: Fix argument not resolved on Windows
+
 
 def rot_center(image, rect, angle):
     """rotate an image while keeping its center"""
-    rot_image = pygame.transform.rotate(image, angle)
+    rot_image = pg.transform.rotate(image, angle)
     rot_rect = rot_image.get_rect(center=rect.center)
-    return rot_image,rot_rect
+    return rot_image, rot_rect
+
+
+def load_anim(folder, colorkey=None):
+    """Loads images from the specified folder and returns a list of pygame image objects and their timings"""
+    path = f'../res/img/{folder}'
+    filenames = os.listdir(path)
+    if TIMINGS_FILENAME in filenames:  # if got timings
+        f = open(f'{path}/{filenames.pop(filenames.index(TIMINGS_FILENAME))}')
+        # pop the timings filename from the list and open the file
+        timings_text = f.read().split(';')
+        f.close()
+        timings = tuple(int(i) for i in timings_text)  # convert to numeric list
+        if len(timings) != len(filenames):
+            raise IndexError(f"Timings don't match images in {path}")
+    else:  # Use default
+        print(f"Haven't found timings in {path} , using default")
+        timings = tuple([DEFAULT_TIMING]*len(filenames))  # create a default timings list
+    imgs = []
+    # Make the timings list display frames to switch the image
+    _sum = 0
+    frames = []
+    for i in timings:
+        frames.append(_sum)  # fill the frames list
+        _sum += i  # increase the frame
+        # TODO: Test for logic errors
+    for fname in filenames:
+        imgs.append(load_image(f'{folder}/{fname}',colorkey)[0])
+    return imgs, tuple(frames)

@@ -1,18 +1,56 @@
 from src.util import *
 
 
+class Animation(pg.sprite.Sprite):
+    """A class that conveniently switches frames by a call."""
+
+    def __init__(self, anim_tuple, *args):
+        """args include: 'loop', 'reverse', 'rotation'... (WIP)"""
+        super().__init__()
+        self.image = anim_tuple[0][0]  # current image, begin with the first frame
+        self.frames = anim_tuple[0]  # images
+        self.timings = anim_tuple[1]
+        self.rect = self.image.get_rect()
+        self._i = 0  # animation counter
+        self._cur = 1  # animation frame (skip the first)
+        self.looped = 'loop' in args  # detect if the animation is looped
+        self.ended = False
+
+    def restart(self):
+        self._i = 0
+        self._cur = 1
+        self.image = self.frames[self._cur]
+        self.ended = False
+
+    def tick(self, *args):
+        if self._cur >= len(self.frames):
+            if self.looped:
+                self.restart()
+                return True
+            else:
+                self.ended = True
+                return False
+        self._i += 1
+        if self._i == self.timings[self._cur]:  # if the counter reached the value in the next position in the list
+            self.image = self.frames[self._cur]  # set the new frame
+            self._cur += 1  # begin waiting for the next frame
+            return True  # indicate the change NOTE: For the time being, will be removed
+        else:
+            return False  # indicate no change
+
+
 class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and rectangle
     """Physics object"""
 
-    def __init__(self, sprite, x, y, angle=0.0):
-        """sprite is a tuple of pygame.sprite and pygame.rect, x,y are global spawn coordinates, angle clockwise"""
+    # TODO: Replace naked pg.sprites with Animations and avoid duplicates
+    def __init__(self, image, x, y, angle=0.0):
+        """x,y are global spawn coordinates, angle clockwise"""
         super().__init__()
         self.x = x  # Global
         self.y = y  # Global
         self.angle = angle
-        self.sprite = sprite[0]  # pygame.sprite
-        self.rect = sprite[1]  # pygame.rect
-        # TODO: Figure out the attributes the Sprite class has and don't duplicate them.
+        self.image = image  # pygame.sprite.image
+        self.rect = image.get_rect()  # pygame.sprite.rect
 
     def tp(self, to_x, to_y, is_relative=False):  # global
         if is_relative:
@@ -23,7 +61,9 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
             self.y = to_y
 
     def update(self, *args):  # super().update does nothing but can be called on Groups
-        pass
+        if self.angle:
+            self.image, self.rect = rot_center(self.image, self.rect, self.angle)  # Rotate
+            self.angle = 0  # Stop rotating
 
     def kill(self):
         # Whatever
@@ -49,7 +89,6 @@ class Entity(Object):
 
     def kill(self):
         self.hp = 0  # Kill the entity
-
         super().kill()  # Kill the object
 
     def update(self):  # overrides the Object.update() method
@@ -76,53 +115,45 @@ class GUI(Object):
 
 
 class Player(Entity):
-    def __init__(self, sprite, x, y, max_hp, defence, speed, res):
-        super().__init__(sprite, x, y, max_hp, defence, speed)
-        self.rect.x = res[0] // 2 - sprite[0].get_width() // 2
-        self.rect.y = res[1] // 2 - sprite[0].get_height() // 2
-        # TODO: remove usage of screen coords
+    def __init__(self, game):
+        self.game = game
+        data = self.game.data
+        super().__init__(data.player_image, 0, 0, data.player_max_hp, data.player_defence, data.player_speed)
+        self.slash = Slash(self, data.slash_anim, data.slash_sound)  # Create an attack
 
     def update(self):
         super().update()
+        self.rect.x, self.rect.y = self.x, self.y
+        # Note: WIP
+
+    def blit(self):
+        self.slash.blit(self.game.screen)  # draw the slash first
+        self.game.screen.blit(self.image, self.rect)  # draw self over the slash
 
 
-class View:
-    """Handling the contents of the screen"""
+class Slash(Object):
+    """Creates an attack for the entity"""
 
-    def __init__(self, player, screen):
-        self.player = player
-        self.screen = screen
-        self.x = player.x
-        self.y = player.y
-        self.rect = screen.get_rect()
-        self.half_player_size = self.player.sprite.get_width() // 2, self.player.sprite.get_height() // 2
+    def __init__(self, owner, anim_tuple, sound=None):
+        """Owner is the Entity doing a slash, anim_tuple is returned by load_anim"""
+        self.anim = Animation(anim_tuple)  # Load an animation
+        super().__init__(self.anim.image, owner.x, owner.y)  # first frame
+        self.owner = owner  # store the reference
+        self.sound = sound
+        self.angle = 0
+        self.slashing = False
 
-    @staticmethod
-    def update(screen_size, mouse_pos, player_pos):
-        # TODO: make camera movement smoother
-        dx = mouse_pos[0] - screen_size[0] // 2
-        expected_x = screen_size[0] // 2 - dx // 2
-        if expected_x - player_pos[0] > 0:
-            if expected_x - player_pos[0] > 10:
-                x = player_pos[0] + 10
-            else:
-                x = expected_x
-        else:
-            if expected_x - player_pos[0] < -10:
-                x = player_pos[0] - 10
-            else:
-                x = expected_x
+    def __call__(self):  # If the object is called
+        if self.sound:
+            self.sound.play()  # play the sound at the animation start
+        self.slashing = True
+        self.anim.restart()
 
-        dy = mouse_pos[1] - screen_size[1] // 2
-        expected_y = screen_size[1] // 2 - dy // 2
-        if expected_y - player_pos[1] > 0:
-            if expected_y - player_pos[1] > 10:
-                y = player_pos[1] + 10
-            else:
-                y = expected_y
-        else:
-            if expected_y - player_pos[1] < -10:
-                y = player_pos[1] - 10
-            else:
-                y = expected_y
-        return x, y
+    def blit(self, screen):  # Every time we blit
+        if self.slashing:  # If slashing
+            self.rect.center = self.owner.rect.center  # Follow the player
+            if self.anim.tick():  # if the animation changed
+                self.image = self.anim.image  # assign the new frame
+            elif self.anim.ended:  # but if we stopped
+                self.slashing = False
+            screen.blit(self.image, self.rect)

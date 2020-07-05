@@ -1,7 +1,7 @@
-from src.util import *
 from src.data import *
 from src.object import *
-
+from src.view import *
+from src.misc import *
 
 # Note: Always use .convert() when loading images from the disk
 # Note: Scroll by several pixels per update. The flip() method is very slow.
@@ -10,40 +10,37 @@ from src.object import *
 # TODO: Set font
 # TODO: Add exception handling for files
 # TODO: Handle the difficulties with object size etc depending on screen size. Add zoom?
-# TODO: Add normal speed config for player
+# TODO: Add normal speed config for owner
 
-
+import pathlib
+print(pathlib.Path().absolute())
 class Game:
     """Main game class"""
 
     def __init__(self):
+        pg.mixer.pre_init(44100)
         pg.init()
+        pg.mixer.set_num_channels(32)
         infos = pg.display.Info()
         self.screen_width, self.screen_height = infos.current_w, infos.current_h
-        self.screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
+        self.screen = pg.display.set_mode((self.screen_width, self.screen_height))
         pg.display.set_caption("Ninja")
-        pg.display.set_icon(pg.image.load("../res/img/icon.png").convert())
-        self.data = Data(self, "settings.json")
-        self.bg, self.bg_rect = load_sprite("bg_test.png")
-        self.bg = pg.transform.smoothscale(self.bg, (1920, 1080))
+        pg.display.set_icon(load_image('icon.png')[0])
+        self.bg, self.bg_rect = load_image("bg_test.png")
+        self.bg = pg.transform.scale2x(self.bg)
         self.time = 1.0  # Adjust time speed
-        self.player = Player(self.data.player_sprite,
-                             0,
-                             0,
-                             self.data.player_max_hp,
-                             self.data.player_defence,
-                             7,
-                             (self.screen_width, self.screen_height))
-        self.view = View(self.player, self.screen)
+        self.data = Data(self, "settings.json")
+        self.player = Player(self)
+        self.view = View(self.player, self.screen)  # follow the player on the game's screen
         self.clock = pg.time.Clock()
         self.mouse_pos = pg.mouse.get_pos()
+        self.objects = pg.sprite.Group()  # store ALL the objects in the game except single-instance ones
 
     def main(self):
         """Run the game"""
         while True:
             self._process_events()
             # After every event
-
             self._update()
             self._draw()
             self.clock.tick(self.data.fps)  # cap the fps
@@ -68,16 +65,16 @@ class Game:
     def _draw(self):
         """Draw every object and refresh the screen"""
         self._draw_bg()
-        self.screen.blit(self.player.sprite, self.player.rect)
+        self.player.blit()
         self.print_text()
         pg.display.flip()
 
     def _update(self):
         self.mouse_pos = pg.mouse.get_pos()
         self.player.update()
-        self.player.rect.x, self.player.rect.y = self.view.update((self.screen_width, self.screen_height),
-                                                                  self.mouse_pos,
-                                                                  (self.player.rect.x, self.player.rect.y))
+    #    self.player.rect.x, self.player.rect.y = self.view.update((self.screen_width, self.screen_height),
+    #                                                              self.mouse_pos,
+    #                                                             (self.player.rect.x, self.player.rect.y))
 
     def print_text(self):
         font = pg.font.Font(None, 20)
@@ -85,7 +82,10 @@ class Game:
         self.screen.blit(text, (400, 300))
 
     def _draw_bg(self):
-        self.screen.blit(self.bg, self.bg_rect)
+        self.screen.fill((0, 0, 0))  # fill the void
+        self.screen.blit(self.bg, self.bg_rect)  # draw the image
+
+
 # TODO: Change the annoying return of load_sprite, load_sound
 # TODO: Implement background moving to respond to a view
 if __name__ == '__main__':
