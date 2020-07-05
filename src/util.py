@@ -14,11 +14,13 @@ def load_image(fname, colorkey=None):
     except pg.error as message:
         print('Cannot load image:', fname)
         raise SystemExit(message)
-    image = image.convert()
     if colorkey is not None:
         if colorkey == -1:
             colorkey = image.get_at((0, 0))
         image.set_colorkey(colorkey, pg.RLEACCEL)
+        image = image.convert_alpha()
+    else:
+        image = image.convert()
     return image, image.get_rect()
 
 
@@ -67,5 +69,5 @@ def load_anim(folder, colorkey=None):
         _sum += i  # increase the frame
         # TODO: Test for logic errors
     for fname in filenames:
-        imgs.append(load_image(f'{folder}/{fname}',colorkey)[0])
+        imgs.append(load_image(f'{folder}/{fname}', colorkey)[0])
     return imgs, tuple(frames)

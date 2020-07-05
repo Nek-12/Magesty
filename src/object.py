@@ -1,42 +1,5 @@
 from src.util import *
-
-
-class Animation(pg.sprite.Sprite):
-    """A class that conveniently switches frames by a call."""
-
-    def __init__(self, anim_tuple, *args):
-        """args include: 'loop', 'reverse', 'rotation'... (WIP)"""
-        super().__init__()
-        self.image = anim_tuple[0][0]  # current image, begin with the first frame
-        self.frames = anim_tuple[0]  # images
-        self.timings = anim_tuple[1]
-        self.rect = self.image.get_rect()
-        self._i = 0  # animation counter
-        self._cur = 1  # animation frame (skip the first)
-        self.looped = 'loop' in args  # detect if the animation is looped
-        self.ended = False
-
-    def restart(self):
-        self._i = 0
-        self._cur = 1
-        self.image = self.frames[self._cur]
-        self.ended = False
-
-    def tick(self, *args):
-        if self._cur >= len(self.frames):
-            if self.looped:
-                self.restart()
-                return True
-            else:
-                self.ended = True
-                return False
-        self._i += 1
-        if self._i == self.timings[self._cur]:  # if the counter reached the value in the next position in the list
-            self.image = self.frames[self._cur]  # set the new frame
-            self._cur += 1  # begin waiting for the next frame
-            return True  # indicate the change NOTE: For the time being, will be removed
-        else:
-            return False  # indicate no change
+from src.misc import *
 
 
 class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and rectangle
@@ -127,13 +90,12 @@ class Player(Entity):
         # Note: WIP
 
     def blit(self):
-        self.slash.blit(self.game.screen)  # draw the slash first
-        self.game.screen.blit(self.image, self.rect)  # draw self over the slash
+        self.game.screen.blit(self.image, self.rect)  # draw self
+        self.slash.blit(self.game.screen)  # draw the slash over self
 
 
 class Slash(Object):
     """Creates an attack for the entity"""
-
     def __init__(self, owner, anim_tuple, sound=None):
         """Owner is the Entity doing a slash, anim_tuple is returned by load_anim"""
         self.anim = Animation(anim_tuple)  # Load an animation
@@ -144,16 +106,18 @@ class Slash(Object):
         self.slashing = False
 
     def __call__(self):  # If the object is called
-        if self.sound:
-            self.sound.play()  # play the sound at the animation start
-        self.slashing = True
-        self.anim.restart()
+        if not self.slashing:
+            if self.sound:
+                self.sound.play()  # play the sound at the animation start
+            self.slashing = True
+            self.anim.restart()
 
     def blit(self, screen):  # Every time we blit
         if self.slashing:  # If slashing
             self.rect.center = self.owner.rect.center  # Follow the player
             if self.anim.tick():  # if the animation changed
                 self.image = self.anim.image  # assign the new frame
+                self.rect = self.anim.rect  # temporary workaround
             elif self.anim.ended:  # but if we stopped
                 self.slashing = False
             screen.blit(self.image, self.rect)

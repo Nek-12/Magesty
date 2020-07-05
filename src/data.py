@@ -9,7 +9,7 @@ class Data:
         self.player_image = load_image("ninja.png")[0]  # tuple
         self.player_defence = 1
         self.player_speed = 10
-        self.slash_anim = load_anim('slash_1',-1)
+        self.slash_anim = load_anim('slash_1', -1)
         self.slash_sound = load_sound('swing.wav')
         self.keydown_actions = {
             pg.K_F11: toggle_fullscreen,
