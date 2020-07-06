@@ -15,11 +15,11 @@ class Data:
         self.slash_sounds = load_soundlist('swing')
         self.meat_sounds = load_soundlist('meat')
         self.music = load_sound('music.wav')
-        self.player_move_anims = load_animations_dictionary('char_move', 4)
+        self.player_move_anims = load_animations_dictionary('char_move', 4, 'loop')
         for a in self.player_move_anims.values():
             a = upscale_anim(a.frames, 4.0)
         self.player_sprite = self.player_move_anims['d'].frames[1]
-        self.player_attack_anims = load_animations_dictionary('char_attack', 4)
+        self.player_attack_anims = load_animations_dictionary('char_attack', 4, 'loop')
         for a in self.player_attack_anims.values():
             a = upscale_anim(a.frames, 4.0)
         self.player_defence = 1

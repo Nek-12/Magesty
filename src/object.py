@@ -91,6 +91,7 @@ class Player(Entity):
         self.slash = Slash(self, data.slash_anim, data.slash_sounds)  # Create an attack
         self.attack_anims = data.player_attack_anims
         self.anim = self.move_anims['r']
+        print (self.move_anims)
 
     def _select_anim(self):
         s = ''
@@ -102,6 +103,7 @@ class Player(Entity):
             s += 'l'
         elif self.moving_r:
             s += 'r'
+        print(s)
         return s
     # TODO: Inefficient algorithm, optimize
 
@@ -114,7 +116,8 @@ class Player(Entity):
             self.blocked = False
             direction = self._select_anim()
             if direction:
-                self.anim = self.move_anims[direction]
+                print(direction)
+                self.anim.frames = self.move_anims[direction].frames
 
     def blit(self, screen):
         if self.anim.tick():

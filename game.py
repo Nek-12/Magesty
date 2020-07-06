@@ -88,7 +88,7 @@ class Game:
 
     def _draw_bg(self):
         self.screen.fill((0, 0, 0))  # fill the void
-        self.screen.blit(self.bg, self.bg_rect)  # draw the image
+        #self.screen.blit(self.bg, self.bg_rect)  # draw the image
 
 
 # TODO: Change the annoying return of load_sprite, load_sound

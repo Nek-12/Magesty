@@ -146,7 +146,7 @@ class SoundPack:
         self.sounds[randint(0, len(self.sounds) - 1)].play()
 
 
-def load_animations_dictionary(folder, pics_on_sheet):
+def load_animations_dictionary(folder, pics_on_sheet, *args):
     path = f"../res/img/{folder}"
     ret = {}  # create a dictionary to store animations
     fnames = os.listdir(path)  # get filenames
@@ -154,7 +154,7 @@ def load_animations_dictionary(folder, pics_on_sheet):
     for i in range(len(fnames)):  # for every file
         sh = Spritesheet(f"{folder}/{fnames[i]}", -1)  # open a spritesheet, get the colorkey
         images = sh.load_strip((0, 0, 32, 32), pics_on_sheet)  # load a list of sprites from the sheet
-        anim = Animation((images, timings), 'loop')  # Create a new Animation with these args
+        anim = Animation((images, timings), args)  # Create a new Animation with these args
         ret[fnames[i].replace('.png', '')] = anim
         # Add this animation to a dictionary + direction (e.g. 'ld' = left-down)
     return ret
