@@ -8,7 +8,7 @@ class View:
         self.y = owner.y
         self.rect = screen.get_rect()
         self.half_player_size = self.owner.image.get_width() // 2, self.owner.image.get_height() // 2
-        # TODO: Remove redundant atribute
+        # TODO: Remove redundant attribute
 
     def update(self, screen_size, mouse_pos, player_pos):
         self.rect.x, self.rect.y = self.owner.rect.center

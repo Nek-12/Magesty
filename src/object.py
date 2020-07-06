@@ -48,6 +48,7 @@ class Entity(Object):
         self.moving_r = False
         self.moving_d = False
         self.moving_l = False
+        self.blocked = False
         if hp:
             self.hp = hp
         else:
@@ -60,14 +61,15 @@ class Entity(Object):
     def update(self):  # overrides the Object.update() method
         """Movement and AI"""
         super().update()  # Call the Object update method
-        if self.moving_u:
-            self.y -= self.speed
-        if self.moving_d:
-            self.y += self.speed
-        if self.moving_r:
-            self.x -= self.speed
-        if self.moving_l:
-            self.x += self.speed
+        if not self.blocked:
+            if self.moving_u:
+                self.y -= self.speed
+            if self.moving_d:
+                self.y += self.speed
+            if self.moving_r:
+                self.x -= self.speed
+            if self.moving_l:
+                self.x += self.speed
 
 
 class GUI(Object):
@@ -84,19 +86,40 @@ class Player(Entity):
     def __init__(self, game):
         self.game = game
         data = self.game.data
-        super().__init__(data.player_image, 0, 0, data.player_max_hp, data.player_defence, data.player_speed)
+        self.move_anims = data.player_move_anims
+        super().__init__(data.player_sprite, 0, 0, data.player_max_hp, data.player_defence, data.player_speed)
         self.slash = Slash(self, data.slash_anim, data.slash_sounds)  # Create an attack
-        self.attack_sprite = data.player_attacking_sprite
+        self.attack_anims = data.player_attack_anims
+        self.anim = self.move_anims['r']
+
+    def _select_anim(self):
+        s = ''
+        if self.moving_u:
+            s += 'u'
+        elif self.moving_d:
+            s += 'd'
+        if self.moving_l:
+            s += 'l'
+        elif self.moving_r:
+            s += 'r'
+        return s
+    # TODO: Inefficient algorithm, optimize
 
     def update(self):
         super().update()
         self.rect.x, self.rect.y = self.x, self.y
         if self.slash.slashing:
-            self.image = self.attack_sprite
+            self.blocked = True
         else:
-            self.image = self.game.data.player_image
+            self.blocked = False
+            direction = self._select_anim()
+            if direction:
+                self.anim = self.move_anims[direction]
 
     def blit(self, screen):
+        if self.anim.tick():
+            self.image = self.anim.image
+            self.rect = self.anim.rect
         super().blit(screen)
         self.slash.blit(screen)  # draw the slash over self
 

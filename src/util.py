@@ -1,11 +1,8 @@
 import pygame as pg
-import sys
-import json
 import platform
 import os
-from random import randint
 
-DEFAULT_TIMING = 10
+DEFAULT_TIMING = 3
 TIMINGS_FILENAME = 'timings.txt'
 
 
@@ -46,21 +43,28 @@ def rot_center(image, rect, angle):
     return rot_image, rot_rect
 
 
-def load_anim(folder, colorkey=None):
-    """Loads images from the specified folder and returns a list of pygame image objects and their timings"""
-    path = f'../res/img/{folder}'
-    filenames = os.listdir(path)
-    if TIMINGS_FILENAME in filenames:  # if got timings
-        f = open(f'{path}/{filenames.pop(filenames.index(TIMINGS_FILENAME))}')
-        # pop the timings filename from the list and open the file
+def get_timings(path, amount, fname=TIMINGS_FILENAME):
+    try:
+        f = open(f'{path}/{fname}')  # try to get the file
         timings_text = f.read().split(';')
         f.close()
         timings = tuple(int(i) for i in timings_text)  # convert to numeric list
-        if len(timings) != len(filenames):
+        if len(timings) != amount:
             raise IndexError(f"Timings don't match images in {path}")
-    else:  # Use default
+    except FileNotFoundError:  # If not found, use default
         print(f"Haven't found timings in {path} , using default")
-        timings = tuple([DEFAULT_TIMING] * len(filenames))  # create a default timings list
+        timings = tuple([DEFAULT_TIMING] * amount)  # create a default timings list
+    return timings
+
+
+def load_anim(folder, colorkey=None, timings_fname=TIMINGS_FILENAME):
+    """Loads images from the specified folder and returns a list of pygame image objects and their timings"""
+    path = f'../res/img/{folder}'
+    filenames = os.listdir(path)
+    if timings_fname in filenames:
+        filenames.pop(filenames.index(timings_fname))
+    frames_cnt = len(filenames)
+    timings = get_timings(path, frames_cnt, timings_fname)
     imgs = []
     # Make the timings list display frames to switch the image
     _sum = 0
@@ -76,9 +80,11 @@ def load_anim(folder, colorkey=None):
 
 def upscale_anim(anim, coefficient=2.0):
     """upscale every frame in a list of images"""
-    if coefficient == 2.0:
-        for i in range(len(anim)):
-            anim[i] = pg.transform.scale2x(anim[i])
+    if coefficient % 2 == 0:
+        while coefficient != 1:
+            coefficient //= 2
+            for i in range(len(anim)):
+                anim[i] = pg.transform.scale2x(anim[i])
     else:
         for i in range(len(anim)):
             base_rect = anim[i].get_rect()
@@ -86,7 +92,7 @@ def upscale_anim(anim, coefficient=2.0):
     return anim
 
 
-def load_soundlist(folder, *args):
+def load_soundlist(folder):
     path = f'../res/sfx/{folder}'
     filenames = os.listdir(path)
     ret = []

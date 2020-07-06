@@ -1,40 +1,40 @@
 from src.util import *
+from random import randint
 
 
 class Spritesheet:
     def __init__(self, filename, colorkey=None):
-        self.sheet = load_image(filename, colorkey)
+        self.sheet = load_image(filename, colorkey)[0]
         self.colorkey = colorkey
+        if self.colorkey == -1:
+            self.colorkey = self.sheet.get_at((0, 0))
 
     def _convert(self, img):
         if self.colorkey is not None:
+            img.set_colorkey(self.colorkey, pg.RLEACCEL)
             return img.convert_alpha()
         else:
             return img.convert()
 
     # Load a specific image from a specific rectangle
-    def image_at(self, rectangle, colorkey=None):
+    def image_at(self, rectangle):
         """Loads image from x,y,x+offset,y+offset"""
         rect = pg.Rect(rectangle)
-        image = pg.Surface(rect.size).convert()
+        image = self._convert(pg.Surface(rect.size))
         image.blit(self.sheet, (0, 0), rect)
-        if colorkey is not None:
-            if colorkey is -1:
-                colorkey = image.get_at((0, 0))
-            image.set_colorkey(colorkey, pg.RLEACCEL)
         return image
 
     # Load a whole bunch of images and return them as a list
-    def images_at(self, rects, colorkey=None):
+    def images_at(self, rects):
         """Loads multiple images, supply a list of coordinates"""
-        return [self.image_at(rect, colorkey) for rect in rects]
+        return [self.image_at(rect) for rect in rects]
 
     # Load a whole strip of images
-    def load_strip(self, rect, image_count, colorkey=None):
+    def load_strip(self, rect, image_count):
         """Loads a strip of images and returns them as a list"""
         tups = [(rect[0] + rect[2] * x, rect[1], rect[2], rect[3])
                 for x in range(image_count)]
-        return self.images_at(tups, colorkey)
+        return self.images_at(tups)
 
 
 class Animation(pg.sprite.Sprite):
@@ -58,7 +58,7 @@ class Animation(pg.sprite.Sprite):
         self.image = self.frames[self._cur]
         self.ended = False
 
-    def tick(self, *args):
+    def tick(self):
         """Tick every frame"""
         if self.ended:
             raise RuntimeError("Called tick after the animation ended")
@@ -98,7 +98,7 @@ class RotatingAnim(pg.sprite.Sprite):
         self.image = self._base_image
         self.ended = False
 
-    def tick(self, *args):
+    def tick(self):
         """Tick every frame"""
         if self.ended:
             raise RuntimeError("Called tick after the animation ended")
@@ -144,3 +144,17 @@ class SoundPack:
 
     def play_random(self):
         self.sounds[randint(0, len(self.sounds) - 1)].play()
+
+
+def load_animations_dictionary(folder, pics_on_sheet):
+    path = f"../res/img/{folder}"
+    ret = {}  # create a dictionary to store animations
+    fnames = os.listdir(path)  # get filenames
+    timings = get_timings(path, pics_on_sheet)  # attempt to get animation timings for the folder
+    for i in range(len(fnames)):  # for every file
+        sh = Spritesheet(f"{folder}/{fnames[i]}", -1)  # open a spritesheet, get the colorkey
+        images = sh.load_strip((0, 0, 32, 32), pics_on_sheet)  # load a list of sprites from the sheet
+        anim = Animation((images, timings), 'loop')  # Create a new Animation with these args
+        ret[fnames[i].replace('.png', '')] = anim
+        # Add this animation to a dictionary + direction (e.g. 'ld' = left-down)
+    return ret

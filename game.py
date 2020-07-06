@@ -8,6 +8,7 @@ assert pg.version.ver[0] == str(2), "Pygame version not compatible with the game
 # Note: Scroll by several pixels per update. The flip() method is very slow.
 # Note: No cyclic dependencies, no going up hierarchy
 
+# TODO: Fix diagonal player movement being faster by 1.4 using angles
 # TODO: Set font
 # TODO: Handle the problem with Windows DPI scaling
 # TODO: Add normal speed config for player
@@ -16,28 +17,30 @@ assert pg.version.ver[0] == str(2), "Pygame version not compatible with the game
 class Game:
     """Main game class"""
     def __init__(self):
-        pg.mixer.pre_init(44100)
+        pg.mixer.pre_init()
         pg.init()
         pg.mixer.set_num_channels(32)
         infos = pg.display.Info()
         self.screen_width, self.screen_height = infos.current_w, infos.current_h
-        self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.SCALED)
+        self.screen = pg.display.set_mode((369*4, 209*4), pg.SCALED)  # NOTE: temporary
         pg.display.set_caption("Ninja")
         pg.display.set_icon(load_image('icon.png')[0])
         self.bg, self.bg_rect = load_image("bg_test.png")
-        self.bg = pg.transform.scale2x(pg.transform.scale2x(self.bg))
+        self.bg = upscale_anim([self.bg], 4.0)[0]  # animation consists of one frame
         self.time = 1.0  # Adjust time speed
         self.data = Data(self, "settings.json")
         self.player = Player(self)
         self.view = View(self.player, self.screen)  # follow the player on the game's screen
         self.clock = pg.time.Clock()
+        self.font = pg.font.Font(None, 40)
+        self.fps = 0
         self.mouse_pos = pg.mouse.get_pos()
         self.objects = pg.sprite.Group()  # store ALL the objects in the game except single-instance ones
 
     def main(self):
         """Run the game"""
         self.data.load(self)
-        self.data.music.set_volume(0.3)
+        self.data.music.set_volume(self.data.volume)
         self.data.music.play(-1, 0, 1000)
         while True:
             self._process_events()
@@ -45,12 +48,13 @@ class Game:
             self._update()
             self._draw()
             self.clock.tick(self.data.fps)  # cap the fps
+            self.fps = int(self.clock.get_fps())
 
     def _process_events(self):
         """Handle the event queue"""
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                sys.exit()
+                pg.quit()
             elif event.type == pg.KEYDOWN:
                 try:
                     self.data.keydown_actions[event.key]()  # execute specified keydown actions
@@ -67,7 +71,7 @@ class Game:
         """Draw every object and refresh the screen"""
         self._draw_bg()
         self.player.blit(self.screen)
-        self.print_text()
+        self.print_debug_info()
         pg.display.flip()
 
     def _update(self):
@@ -77,9 +81,9 @@ class Game:
     #                                                              self.mouse_pos,
     #                                                             (self.player.rect.x, self.player.rect.y))
 
-    def print_text(self):
-        font = pg.font.Font(None, 40)
-        text = font.render('player coords ' + str(self.player.x) + '  ' + str(self.player.y), True, (255, 255, 255))
+    def print_debug_info(self):
+        text = self.font.render(f"X: {self.player.x} Y: {self.player.y} FPS: {self.fps}",
+                                True, (255, 255, 255), (0, 0, 0))
         self.screen.blit(text, (10, 10))
 
     def _draw_bg(self):
