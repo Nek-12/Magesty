@@ -1,11 +1,11 @@
 from src.util import *
 from src.misc import *
+from src.animation import *
 
 
 class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and rectangle
     """Physics object"""
 
-    # TODO: Replace naked pg.sprites with Animations and avoid duplicates
     def __init__(self, image, x, y, angle=0.0):
         """x,y are global spawn coordinates, angle clockwise"""
         super().__init__()
@@ -67,9 +67,9 @@ class Entity(Object):
             if self.moving_d:
                 self.y += self.speed
             if self.moving_r:
-                self.x -= self.speed
-            if self.moving_l:
                 self.x += self.speed
+            if self.moving_l:
+                self.x -= self.speed
 
 
 class GUI(Object):
@@ -87,11 +87,17 @@ class Player(Entity):
         self.game = game
         data = self.game.data
         self.move_anims = data.player_move_anims
+        self.attack_anims = data.player_attack_anims
+        for a in self.move_anims.values():
+            a.owner = self
+            a.restart()
+        for a in self.attack_anims.values():
+            a.owner = self
+            a.restart()
+        self.anim = self.move_anims['r']
+        self.idle_image = data.player_sprite
         super().__init__(data.player_sprite, 0, 0, data.player_max_hp, data.player_defence, data.player_speed)
         self.slash = Slash(self, data.slash_anim, data.slash_sounds)  # Create an attack
-        self.attack_anims = data.player_attack_anims
-        self.anim = self.move_anims['r']
-        print (self.move_anims)
 
     def _select_anim(self):
         s = ''
@@ -105,6 +111,7 @@ class Player(Entity):
             s += 'r'
         print(s)
         return s
+
     # TODO: Inefficient algorithm, optimize
 
     def update(self):
@@ -116,13 +123,12 @@ class Player(Entity):
             self.blocked = False
             direction = self._select_anim()
             if direction:
-                print(direction)
-                self.anim.frames = self.move_anims[direction].frames
+                self.anim = self.move_anims[direction]
+                self.anim.tick()
+            else:
+                self.image = self.idle_image
 
     def blit(self, screen):
-        if self.anim.tick():
-            self.image = self.anim.image
-            self.rect = self.anim.rect
         super().blit(screen)
         self.slash.blit(screen)  # draw the slash over self
 
@@ -140,10 +146,11 @@ class Crawler(Entity):
 
 class Slash(Object):
     """Creates an attack for the entity"""
+
     def __init__(self, owner, anim_tuple, sounds=None):
-        """Owner is the Entity doing a slash, anim_tuple is returned by load_anim"""
-        self.anim = Animation(anim_tuple)  # Load an animation
-        super().__init__(self.anim.image, owner.x, owner.y)  # first frame
+        """Owner is the Entity doing a slash, anim_and_timings is returned by load_anim"""
+        self.anim = SpriteAnim(self, anim_tuple)  # Load an animation
+        super().__init__(anim_tuple[0][0], owner.x, owner.y)  # first frame
         self.owner = owner  # store the reference
         self.sounds_miss = SoundPack(sounds)
         self.angle = 0
@@ -159,9 +166,7 @@ class Slash(Object):
     def blit(self, screen):  # Every time we blit
         if self.slashing:  # If slashing
             self.rect.center = self.owner.rect.center  # Follow the player
-            if self.anim.tick():  # if the animation changed
-                self.image = self.anim.image  # assign the new frame
-                self.rect = self.anim.rect  # temporary workaround
-            elif self.anim.ended:  # but if we stopped
+            self.anim.tick()  # advance the animation
+            if self.anim.ended:  # but if we stopped
                 self.slashing = False
             screen.blit(self.image, self.rect)

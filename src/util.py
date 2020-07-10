@@ -1,6 +1,7 @@
 import pygame as pg
 import platform
 import os
+from functools import wraps
 
 DEFAULT_TIMING = 3
 TIMINGS_FILENAME = 'timings.txt'
@@ -66,16 +67,9 @@ def load_anim(folder, colorkey=None, timings_fname=TIMINGS_FILENAME):
     frames_cnt = len(filenames)
     timings = get_timings(path, frames_cnt, timings_fname)
     imgs = []
-    # Make the timings list display frames to switch the image
-    _sum = 0
-    frames = []
-    for i in timings:
-        frames.append(_sum)  # fill the frames list
-        _sum += i  # increase the frame
-        # TODO: Test for logic errors
     for fname in filenames:
         imgs.append(load_image(f'{folder}/{fname}', colorkey)[0])
-    return imgs, tuple(frames)
+    return imgs, timings
 
 
 def upscale_anim(anim, coefficient=2.0):
@@ -99,3 +93,5 @@ def load_soundlist(folder):
     for name in filenames:
         ret.append(load_sound(f"{folder}/{name}"))
     return ret
+
+
