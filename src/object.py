@@ -1,4 +1,3 @@
-from src.util import *
 from src.misc import *
 from src.animation import *
 
@@ -49,14 +48,26 @@ class Entity(Object):
         self.moving_d = False
         self.moving_l = False
         self.blocked = False
+        self.stunned_for = 0  # ms
         if hp:
             self.hp = hp
         else:
             self.hp = max_hp
 
-    def kill(self):
+    def stun(self, ms):
+        self.blocked = True
+        self.stunned_for = ms
+
+    def _die(self):
         self.hp = 0  # Kill the entity
         super().kill()  # Kill the object
+        # TODO: Sound and animation
+
+    def hit(self, hp):
+        self.hp -= hp
+        # TODO: Other actions like sound and animation
+        if self.hp < 0:
+            self._die()
 
     def update(self):  # overrides the Object.update() method
         """Movement and AI"""
@@ -70,6 +81,7 @@ class Entity(Object):
                 self.x += self.speed
             if self.moving_l:
                 self.x -= self.speed
+        self.stunned_for -= 1  # TODO: Use ms, not frames!
 
 
 class GUI(Object):
@@ -88,6 +100,7 @@ class Player(Entity):
         data = self.game.data
         self.move_anims = data.player_move_anims
         self.attack_anims = data.player_attack_anims
+        # TODO: Utilize getters and setters
         for a in self.move_anims.values():
             a.owner = self
             a.restart()
@@ -132,17 +145,6 @@ class Player(Entity):
         self.slash.blit(screen)  # draw the slash over self
 
 
-class Crawler(Entity):
-    def __init__(self, sprite, x, y, max_hp, armor, speed, angle=0.0, hp=0):
-        super().__init__(sprite, x, y, max_hp, armor, speed, angle, hp)
-
-    def kill(self):
-        super().kill()
-
-    def update(self):
-        super().update()
-
-
 class Slash(Object):
     """Creates an attack for the entity"""
 
@@ -162,10 +164,14 @@ class Slash(Object):
             self.slashing = True
             self.anim.restart()
 
-    def blit(self, screen):  # Every time we blit
+    def update(self):  # Every time we blit
         if self.slashing:  # If slashing
             self.rect.center = self.owner.rect.center  # Follow the player
             self.anim.tick()  # advance the animation
             if self.anim.ended:  # but if we stopped
                 self.slashing = False
-            screen.blit(self.image, self.rect)
+            # TODO: Add collision detection
+
+    def blit(self, screen):
+        if self.slashing:
+            super().blit(screen)

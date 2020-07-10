@@ -1,9 +1,10 @@
 import pygame as pg
 import platform
 import os
-from functools import wraps
 
-DEFAULT_TIMING = 3
+SAFEZONE_MULTIPLIER = 3  # the MINIMUM amount the object
+# can fit into the distance between it and newly spawned object
+DEFAULT_TIMING = 3 # The time between frames in animations
 TIMINGS_FILENAME = 'timings.txt'
 IMG_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'res', 'img')) + os.path.sep
 SFX_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'res', 'sfx')) + os.path.sep
@@ -19,8 +20,8 @@ def load_image(fname, colorkey=None):
     if colorkey is not None:
         if colorkey == -1:
             colorkey = image.get_at((0, 0))
-        image.set_colorkey(colorkey, pg.RLEACCEL)
-        image = image.convert_alpha()
+            image.set_colorkey(colorkey, pg.RLEACCEL)
+            image = image.convert_alpha()
     else:
         image = image.convert()
     return image, image.get_rect()
@@ -75,18 +76,25 @@ def load_anim(folder, colorkey=None, timings_fname=TIMINGS_FILENAME):
     return imgs, timings
 
 
-def upscale_anim(anim, coefficient=2.0):
-    """upscale every frame in a list of images"""
+def upscale_image(img, coefficient):
+    """:returns tuple: image, image.rect()"""
     if coefficient % 2 == 0:
         while coefficient != 1:
             coefficient //= 2
-            for i in range(len(anim)):
-                anim[i] = pg.transform.scale2x(anim[i])
+            img = pg.transform.scale2x(img)
     else:
-        for i in range(len(anim)):
-            base_rect = anim[i].get_rect()
-            anim[i] = pg.transform.smoothscale(anim[i], (base_rect.width * coefficient, base_rect.height * coefficient))
-    return anim
+        base_rect = img.get_rect()
+        img = pg.transform.smoothscale(img, (base_rect.width * coefficient, base_rect.height * coefficient))
+    return img, img.get_rect()
+
+
+def upscale_anim(anim_list, coefficient):
+    """returns a list of images and their rectangles
+    anim_list is a list of pygame.sprites"""
+    for el in anim_list:
+        el = upscale_image(el, coefficient)
+    rects = (i.get_rect() for i in anim_list)
+    return anim_list, rects
 
 
 def load_soundlist(folder):
@@ -96,3 +104,11 @@ def load_soundlist(folder):
     for name in filenames:
         ret.append(load_sound(f"{folder}{os.path.sep}{name}"))
     return ret
+
+
+def collision_test(target, suspects):
+    collided_objects = []
+    for o in suspects:
+        if o.colliderect(target):
+            collided_objects.append(o)
+    return collided_objects

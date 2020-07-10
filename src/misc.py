@@ -1,5 +1,5 @@
 from src.util import *
-from random import randint
+from random import randint, choice
 from src.animation import *
 
 
@@ -69,7 +69,7 @@ class SoundPack:
         self.sounds[randint(0, len(self.sounds) - 1)].play()
 
 
-def load_animations_dictionary(folder, pics_on_sheet, *args):
+def load_animations_dictionary(folder, image_square, pics_on_sheet, colorkey, *args):
     path = IMG_PATH+folder
     ret = {}  # create a dictionary to store animations
     fnames = os.listdir(path)  # get filenames
@@ -77,9 +77,20 @@ def load_animations_dictionary(folder, pics_on_sheet, *args):
     if TIMINGS_FILENAME in fnames:
         fnames.remove(TIMINGS_FILENAME)
     for i in range(len(fnames)):  # for every file
-        sh = Spritesheet(f"{folder}/{fnames[i]}", -1)  # open a spritesheet, get the colorkey
-        images = sh.load_strip((0, 0, 32, 32), pics_on_sheet)  # load a list of sprites from the sheet
+        sh = Spritesheet(f"{folder}/{fnames[i]}", colorkey)  # open a spritesheet, get the colorkey
+        images = sh.load_strip(image_square, pics_on_sheet)  # load a list of sprites from the sheet
         anim = SpriteAnim(None, (images, timings), *args)  # Create a new Animation with these args
         ret[fnames[i].replace('.png', '')] = anim
         # Add this animation to a dictionary + direction (e.g. 'ld' = left-down (tuple))
     return ret
+
+
+def load_sprite_dictionary(folder, colorkey):
+    path = IMG_PATH+folder
+    ret = {}
+    fnames = os.listdir(path)  # get filenames
+    for i in range(len(fnames)):
+        ret[fnames[i].replace('.png', '')] = load_image(f"{folder}{os.path.sep}{fnames[i]}", colorkey)[0]
+    return ret
+
+

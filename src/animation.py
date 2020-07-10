@@ -1,7 +1,6 @@
 from src.util import *
 # TODO: Make methods pure virtual
 
-
 class Animation:
     """A class that conveniently switches frames by a call.
     Usage: call self.animation.tick() every frame -> frame changes if necessary"""
@@ -83,7 +82,6 @@ class RotatingAnim(Animation):
         self.alpha = 0
         self.owner.image = self._base_image
 
-
     def tick(self):
         """Tick every frame"""
         super().tick()
@@ -101,18 +99,18 @@ class RotatingAnim(Animation):
         return True  # indicate the change
 
 
-class BlinkingAnim(Animation):
-    """Blinks with the specified parameters"""
-    def __init__(self, owner, image, d_alpha, times=0, starting_alpha=0):
-        """If times = 0, then the animation works indefinitely"""
-        super().__init__(owner)
-        self.image = image
-        self.d_alpha = d_alpha
-        self.times = times
-        self._base_alpha = starting_alpha
-        self.alpha = starting_alpha
-        self._i = 0
+# class BlinkingAnim(Animation):
+#     """Blinks with the specified parameters"""
+#     def __init__(self, owner, image, d_alpha, times=0, starting_alpha=0):
+#         """If times = 0, then the animation works indefinitely"""
+#         super().__init__(owner)
+#         self.image = image
+#         self.d_alpha = d_alpha
+#         self.times = times
+#         self._base_alpha = starting_alpha
+#         self.alpha = starting_alpha
+#         self._i = 0
+#
+#     def restart(self):
+#         self.alpha = self._base_alpha
 
-    def restart(self):
-        self.alpha = self._base_alpha
-        self.owner.image
