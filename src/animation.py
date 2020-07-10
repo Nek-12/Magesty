@@ -40,7 +40,7 @@ class SpriteAnim(Animation):
         self._i = 0
         self._cur = 1
         self.owner.image = self.frames[0]  # sets the frame to first
-        self.owner.rect = self.rects[0]  # sets the rect
+        # self.owner.rect = self.rects[0]  # sets the rect
 
     def tick(self):
         """Call tick every frame"""

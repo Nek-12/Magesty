@@ -70,10 +70,12 @@ class SoundPack:
 
 
 def load_animations_dictionary(folder, pics_on_sheet, *args):
-    path = f"../res/img/{folder}"
+    path = IMG_PATH+folder
     ret = {}  # create a dictionary to store animations
     fnames = os.listdir(path)  # get filenames
     timings = get_timings(path, pics_on_sheet)  # attempt to get animation timings for the folder
+    if TIMINGS_FILENAME in fnames:
+        fnames.remove(TIMINGS_FILENAME)
     for i in range(len(fnames)):  # for every file
         sh = Spritesheet(f"{folder}/{fnames[i]}", -1)  # open a spritesheet, get the colorkey
         images = sh.load_strip((0, 0, 32, 32), pics_on_sheet)  # load a list of sprites from the sheet

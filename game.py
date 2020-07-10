@@ -1,3 +1,4 @@
+import sys
 from src.data import *
 from src.object import *
 from src.view import *
@@ -22,7 +23,7 @@ class Game:
         pg.mixer.set_num_channels(32)
         infos = pg.display.Info()
         self.screen_width, self.screen_height = infos.current_w, infos.current_h
-        self.screen = pg.display.set_mode((369*4, 209*4), pg.SCALED)  # NOTE: temporary
+        self.screen = pg.display.set_mode((369*4, 209*4), pg.SCALED | pg.DOUBLEBUF )  # NOTE: temporary
         pg.display.set_caption("Ninja")
         pg.display.set_icon(load_image('icon.png')[0])
         self.bg, self.bg_rect = load_image("bg_test.png")
@@ -54,7 +55,7 @@ class Game:
         """Handle the event queue"""
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                pg.quit()
+                sys.exit()
             elif event.type == pg.KEYDOWN:
                 try:
                     self.data.keydown_actions[event.key]()  # execute specified keydown actions
@@ -88,7 +89,7 @@ class Game:
 
     def _draw_bg(self):
         self.screen.fill((0, 0, 0))  # fill the void
-        #self.screen.blit(self.bg, self.bg_rect)  # draw the image
+        # self.screen.blit(self.bg, self.bg_rect)  # draw the image
 
 
 # TODO: Change the annoying return of load_sprite, load_sound

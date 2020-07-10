@@ -109,7 +109,6 @@ class Player(Entity):
             s += 'l'
         elif self.moving_r:
             s += 'r'
-        print(s)
         return s
 
     # TODO: Inefficient algorithm, optimize

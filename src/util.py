@@ -5,11 +5,14 @@ from functools import wraps
 
 DEFAULT_TIMING = 3
 TIMINGS_FILENAME = 'timings.txt'
+IMG_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'res', 'img')) + os.path.sep
+SFX_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'res', 'sfx')) + os.path.sep
+print(IMG_PATH + '\n' + SFX_PATH)
 
 
 def load_image(fname, colorkey=None):
     try:
-        image = pg.image.load(f"../res/img/{fname}")
+        image = pg.image.load(IMG_PATH+fname)
     except pg.error as message:
         print('Cannot load image:', fname)
         raise SystemExit(message)
@@ -25,14 +28,14 @@ def load_image(fname, colorkey=None):
 
 def load_sound(fname):
     try:
-        sound = pg.mixer.Sound(f"../res/sfx/{fname}")
+        sound = pg.mixer.Sound(SFX_PATH + fname)
     except pg.error as message:
         raise SystemExit(message)
     return sound
 
 
 def toggle_fullscreen():
-    """suppported only on linux"""
+    """Supported only on linux"""
     if platform.system() == 'Linux':
         pg.display.toggle_fullscreen()
 
@@ -60,7 +63,7 @@ def get_timings(path, amount, fname=TIMINGS_FILENAME):
 
 def load_anim(folder, colorkey=None, timings_fname=TIMINGS_FILENAME):
     """Loads images from the specified folder and returns a list of pygame image objects and their timings"""
-    path = f'../res/img/{folder}'
+    path = IMG_PATH+folder
     filenames = os.listdir(path)
     if timings_fname in filenames:
         filenames.pop(filenames.index(timings_fname))
@@ -68,7 +71,7 @@ def load_anim(folder, colorkey=None, timings_fname=TIMINGS_FILENAME):
     timings = get_timings(path, frames_cnt, timings_fname)
     imgs = []
     for fname in filenames:
-        imgs.append(load_image(f'{folder}/{fname}', colorkey)[0])
+        imgs.append(load_image(f'{folder}{os.path.sep}{fname}', colorkey)[0])
     return imgs, timings
 
 
@@ -87,11 +90,9 @@ def upscale_anim(anim, coefficient=2.0):
 
 
 def load_soundlist(folder):
-    path = f'../res/sfx/{folder}'
+    path = SFX_PATH+folder
     filenames = os.listdir(path)
     ret = []
     for name in filenames:
-        ret.append(load_sound(f"{folder}/{name}"))
+        ret.append(load_sound(f"{folder}{os.path.sep}{name}"))
     return ret
-
-
