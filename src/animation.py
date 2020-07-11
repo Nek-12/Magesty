@@ -1,52 +1,66 @@
-from src.util import *
-# TODO: Make methods pure virtual
+from abc import abstractmethod
 
-class Animation:
+from src.util import *
+from abc import ABCMeta, abstractmethod
+
+
+class Animation(metaclass=ABCMeta):
     """A class that conveniently switches frames by a call.
     Usage: call self.animation.tick() every frame -> frame changes if necessary"""
-    def __init__(self, owner):
-        self.owner = owner
-        self.ended = owner is None  # If there is no owner, you can't animate!
+    def __init__(self):
+        self.ended = False  # If there is no owner, you can't animate!
 
-    def tick(self):
+    @abstractmethod
+    def tick(self, owner):
         if self.ended:
             raise RuntimeError(f"Called tick after the animation ended, owner: {self.owner}")
 
-    def restart(self):
-        self.ended = self.owner is None
+    @abstractmethod
+    def restart(self, owner):
+        self.ended = False
 
 
 class SpriteAnim(Animation):
-    def __init__(self, owner, anim_and_timings, *args):
-        """anim_and_timings=(frames list, timings list), args include: 'loop', 'reverse'
+    def __init__(self, anim_and_timings, *tags):
+        """anim_and_timings=(frames list, timings list), tags include: 'loop', 'reverse'
         if reversed, the timings still must be supplied correctly"""
-        super().__init__(owner)
-        if 'reverse' in args:
+        super().__init__()
+        if 'reverse' in tags:
             self.frames = reversed(anim_and_timings[0])
         else:
             self.frames = anim_and_timings[0]  # images
-        self.looped = 'loop' in args  # detect if the animation is looped
-        self.owner = owner
-        if self.owner:
-            self.owner.image = self.frames[0]  # set the image
+        self.looped = 'loop' in tags  # detect if the animation is looped
+        self.base_image = self.frames[0]
         self.timings = anim_and_timings[1]
-        self.rects = [r.get_rect() for r in self.frames]
+        self.rect = self.base_image.get_rect()
         self._i = 0  # animation counter
         self._cur = 0  # animation frame (skip the first)
 
-    def restart(self):
-        super().restart()
+    def upscale_frames(self, coefficient):
+        self.frames = upscale_anim(self.frames, coefficient)
+        self.base_image = self.frames[0]
+
+    def set_frames(self, frames_list, are_reversed=False):
+        if are_reversed:
+            self.frames = reversed(frames_list)
+        else:
+            self.frames = frames_list  # images
+        self.base_image = self.frames[0]
+        self.rect = self.base_image.get_rect
+
+    def restart(self, owner):
+        super().restart(owner)
         self._i = 0
         self._cur = 1
-        self.owner.image = self.frames[0]  # sets the frame to first
+        owner.image = self.base_image  # sets the frame to first
         # self.owner.rect = self.rects[0]  # sets the rect
 
-    def tick(self):
+    def tick(self, owner):
         """Call tick every frame"""
-        super().tick()
+        super().tick(owner)
         if self._cur >= len(self.frames):
             if self.looped:
-                self.restart()
+                self.restart(owner)
                 return True
             else:
                 self.ended = True
@@ -54,7 +68,7 @@ class SpriteAnim(Animation):
         self._i += 1
         if self._i == self.timings[self._cur]:  # if the counter reached the value in the next position in the list
             self._i = 0
-            self.owner.image = self.frames[self._cur]  # set the new frame
+            owner.image = self.frames[self._cur]  # set the new frame
             self._cur += 1  # begin waiting for the next frame
             return True  # changed
         else:
@@ -65,36 +79,35 @@ class RotatingAnim(Animation):
     """Animation that rotates the sprite"""
     # TODO: Add speedup/slowdown
 
-    def __init__(self, owner, image, d_alpha, to_alpha=360, *args):
+    def __init__(self, owner, image, d_alpha, to_alpha=360, *tags):
         """args include: 'loop', 'reverse'"""
-        super().__init__(owner)
-        self.owner.image = image
+        super().__init__()
         self._base_image = image
         self.rect = image.get_rect()
-        mul = -1*('reversed' in args)
+        mul = -1*('reversed' in tags)
         self.d_alpha = d_alpha * mul  # animation counter
         self.to_alpha = to_alpha * mul
         self.alpha = 0
-        self.looped = 'loop' in args  # detect if the animation is looped
+        self.looped = 'loop' in tags  # detect if the animation is looped
 
-    def restart(self):
-        super().restart()
+    def restart(self,owner):
+        super().restart(owner)
         self.alpha = 0
-        self.owner.image = self._base_image
+        owner.image = self._base_image
 
-    def tick(self):
+    def tick(self, owner):
         """Tick every frame"""
-        super().tick()
+        super().tick(owner)
         if self.alpha >= self.to_alpha:
             if self.looped:
-                self.restart()
+                self.restart(owner)
                 return True
             else:
                 self.ended = True
                 return False
         self.alpha += self.d_alpha
         print(self.alpha)
-        self.owner.image, self.owner.rect = rot_center(self._base_image, self._base_image.get_rect(), self.alpha)
+        owner.image, owner.rect = rot_center(self._base_image, self._base_image.get_rect(), self.alpha)
         # TODO: Test collision handling
         return True  # indicate the change
 

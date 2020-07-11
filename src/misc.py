@@ -5,7 +5,7 @@ from src.animation import *
 
 class Spritesheet:
     def __init__(self, filename, colorkey=None):
-        self.sheet = load_image(filename, colorkey)[0]
+        self.sheet = load_image(filename, colorkey)
         self.colorkey = colorkey
         if self.colorkey == -1:
             self.colorkey = self.sheet.get_at((0, 0))
@@ -21,7 +21,7 @@ class Spritesheet:
     def image_at(self, rectangle):
         """Loads image from x,y,x+offset,y+offset"""
         rect = pg.Rect(rectangle)
-        image = self._convert(pg.Surface(rect.size))
+        image = self._convert(pg.Surface(rect.size))  # TODO: test for None and -1 colorkeys
         image.blit(self.sheet, (0, 0), rect)
         return image
 
@@ -66,7 +66,8 @@ class SoundPack:
         self.sounds[self._i].play()
 
     def play_random(self):
-        self.sounds[randint(0, len(self.sounds) - 1)].play()
+        self.sounds[randint(0, len(self.sounds)-1)].play()
+        # -1 to get the proper subscript for a list
 
 
 def load_animations_dictionary(folder, image_square, pics_on_sheet, colorkey, *args):
@@ -79,7 +80,7 @@ def load_animations_dictionary(folder, image_square, pics_on_sheet, colorkey, *a
     for i in range(len(fnames)):  # for every file
         sh = Spritesheet(f"{folder}/{fnames[i]}", colorkey)  # open a spritesheet, get the colorkey
         images = sh.load_strip(image_square, pics_on_sheet)  # load a list of sprites from the sheet
-        anim = SpriteAnim(None, (images, timings), *args)  # Create a new Animation with these args
+        anim = SpriteAnim((images, timings), *args)  # Create a new Animation with these args
         ret[fnames[i].replace('.png', '')] = anim
         # Add this animation to a dictionary + direction (e.g. 'ld' = left-down (tuple))
     return ret
@@ -90,7 +91,7 @@ def load_sprite_dictionary(folder, colorkey):
     ret = {}
     fnames = os.listdir(path)  # get filenames
     for i in range(len(fnames)):
-        ret[fnames[i].replace('.png', '')] = load_image(f"{folder}{os.path.sep}{fnames[i]}", colorkey)[0]
+        ret[fnames[i].replace('.png', '')] = load_image(f"{folder}{os.path.sep}{fnames[i]}", colorkey)
     return ret
 
 

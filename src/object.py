@@ -1,16 +1,15 @@
 from src.misc import *
 from src.animation import *
+from src.data import Data
 
 
 class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and rectangle
     """Physics object"""
-
-    def __init__(self, image, x, y, angle=0.0):
-        """x,y are global spawn coordinates, angle clockwise"""
+    def __init__(self, image, x, y):
+        """x,y are global spawn coordinates"""
         super().__init__()
         self.x = x  # Global
         self.y = y  # Global
-        self.angle = angle
         self.image = image  # pygame.sprite.image
         self.rect = image.get_rect()  # pygame.sprite.rect
 
@@ -22,10 +21,13 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
             self.x = to_x
             self.y = to_y
 
+    def rotate(self, angle):
+        self.image, self.rect = rot_center(self.image, self.rect, angle)
+
     def update(self, *args):  # super().update does nothing but can be called on Groups
-        if self.angle:
-            self.image, self.rect = rot_center(self.image, self.rect, self.angle)  # Rotate
-            self.angle = 0  # Stop rotating
+        super().update()
+        self.rect.x = self.x
+        self.rect.y = self.y  # TEMPORARY
 
     def blit(self, screen):
         screen.blit(self.image, self.rect)  # draw self
@@ -37,9 +39,8 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
 
 class Entity(Object):
     """Has hp, armor, speed, max_hp, and sub-Object"""
-
-    def __init__(self, sprite, x, y, max_hp, armor, speed, angle=0.0, hp=0):
-        super().__init__(sprite, x, y, angle)
+    def __init__(self, sprite, x, y, max_hp, armor, speed, hp=0):
+        super().__init__(sprite, x, y)
         self.max_hp = max_hp
         self.armor = armor
         self.speed = speed
@@ -55,19 +56,17 @@ class Entity(Object):
             self.hp = max_hp
 
     def stun(self, ms):
+        """Stun the Entity (make it idle)"""
         self.blocked = True
         self.stunned_for = ms
 
-    def _die(self):
-        self.hp = 0  # Kill the entity
-        super().kill()  # Kill the object
-        # TODO: Sound and animation
+    def stop(self):
+        self.moving_u, self.moving_r, self.moving_d, self.moving_l = False, False, False, False
 
     def hit(self, hp):
         self.hp -= hp
-        # TODO: Other actions like sound and animation
         if self.hp < 0:
-            self._die()
+            super().kill()  # Kill the object
 
     def update(self):  # overrides the Object.update() method
         """Movement and AI"""
@@ -81,17 +80,19 @@ class Entity(Object):
                 self.x += self.speed
             if self.moving_l:
                 self.x -= self.speed
-        self.stunned_for -= 1  # TODO: Use ms, not frames!
+        self.stunned_for -= 1000//Data.fps  # TODO: Use ms, not frames!
+        if self.stunned_for < 0:
+            self.blocked = False
 
 
-class GUI(Object):
-    """Interface elements, no AI"""
-
-    def __init__(self, sprite, x, y, on_click_action, on_hover_action, angle=0.0):
-        """x,y, are relative (screen), on_click and on_hover actions must be function objects"""
-        super().__init__(sprite, x, y, angle)
-        self.on_click_action = on_click_action
-        self.on_hover_action = on_hover_action
+# class GUI(Object):
+#     """Interface elements, no AI"""
+#
+#     def __init__(self, sprite, x, y, on_click_action, on_hover_action, angle=0.0):
+#         """x,y, are relative (screen), on_click and on_hover actions must be function objects"""
+#         super().__init__(sprite, x, y)
+#         self.on_click_action = on_click_action
+#         self.on_hover_action = on_hover_action
 
 
 class Player(Entity):
@@ -100,17 +101,13 @@ class Player(Entity):
         data = self.game.data
         self.move_anims = data.player_move_anims
         self.attack_anims = data.player_attack_anims
-        # TODO: Utilize getters and setters
-        for a in self.move_anims.values():
-            a.owner = self
-            a.restart()
-        for a in self.attack_anims.values():
-            a.owner = self
-            a.restart()
-        self.anim = self.move_anims['r']
+        self.anim = self.move_anims['d']
         self.idle_image = data.player_sprite
         super().__init__(data.player_sprite, 0, 0, data.player_max_hp, data.player_defence, data.player_speed)
-        self.slash = Slash(self, data.slash_anim, data.slash_sounds)  # Create an attack
+        self.rect.inflate_ip(-self.rect.width//2, -self.rect.height//2)
+        self.anim.rect.inflate_ip(-self.rect.width // 2, -self.rect.height // 2)
+        # TODO: Fix the rectangle problem, hitboxes are borked
+        self.slash = Slash(self, data.slash_anim, data.slash_soundpack)  # Create an attack
 
     def _select_anim(self):
         s = ''
@@ -126,19 +123,23 @@ class Player(Entity):
 
     # TODO: Inefficient algorithm, optimize
 
+    def do_slash(self):
+        self.slash(self.game.entities)
+
     def update(self):
         super().update()
-        self.rect.x, self.rect.y = self.x, self.y
         if self.slash.slashing:
+            pass
             self.blocked = True
         else:
             self.blocked = False
             direction = self._select_anim()
             if direction:
                 self.anim = self.move_anims[direction]
-                self.anim.tick()
+                self.anim.tick(self)
             else:
                 self.image = self.idle_image
+        self.slash.update()
 
     def blit(self, screen):
         super().blit(screen)
@@ -148,29 +149,33 @@ class Player(Entity):
 class Slash(Object):
     """Creates an attack for the entity"""
 
-    def __init__(self, owner, anim_tuple, sounds=None):
+    def __init__(self, owner, anim_and_timings, sounds=None):
         """Owner is the Entity doing a slash, anim_and_timings is returned by load_anim"""
-        self.anim = SpriteAnim(self, anim_tuple)  # Load an animation
-        super().__init__(anim_tuple[0][0], owner.x, owner.y)  # first frame
+        self.anim = SpriteAnim(anim_and_timings)  # Load an animation
+        super().__init__(anim_and_timings[0][0], owner.x, owner.y)  # first frame
         self.owner = owner  # store the reference
-        self.sounds_miss = SoundPack(sounds)
-        self.angle = 0
+        self.sounds_miss = sounds
         self.slashing = False
+        self.rect.inflate_ip(-self.rect.width//3, -self.rect.height//3)
+        self.anim.rect.inflate_ip(-self.rect.width // 2, -self.rect.height // 2)
 
-    def __call__(self):  # If the object is called
+        # TODO: Why the hell the slash is always present? It should be created on call
+
+    def __call__(self, targets):  # If the object is called
         if not self.slashing:
             if self.sounds_miss:
                 self.sounds_miss.play_random()  # play the sound at the animation start
             self.slashing = True
-            self.anim.restart()
+            for i in collision_test(self, targets):
+                i.hit(5)
+            self.anim.restart(self)
 
     def update(self):  # Every time we blit
         if self.slashing:  # If slashing
             self.rect.center = self.owner.rect.center  # Follow the player
-            self.anim.tick()  # advance the animation
+            self.anim.tick(self)  # advance the animation
             if self.anim.ended:  # but if we stopped
                 self.slashing = False
-            # TODO: Add collision detection
 
     def blit(self, screen):
         if self.slashing:

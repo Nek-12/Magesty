@@ -1,10 +1,11 @@
 import pygame as pg
 import platform
 import os
+import sys
 
 SAFEZONE_MULTIPLIER = 3  # the MINIMUM amount the object
 # can fit into the distance between it and newly spawned object
-DEFAULT_TIMING = 3 # The time between frames in animations
+DEFAULT_TIMING = 3  # The time between frames in animations
 TIMINGS_FILENAME = 'timings.txt'
 IMG_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'res', 'img')) + os.path.sep
 SFX_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'res', 'sfx')) + os.path.sep
@@ -24,7 +25,7 @@ def load_image(fname, colorkey=None):
             image = image.convert_alpha()
     else:
         image = image.convert()
-    return image, image.get_rect()
+    return image
 
 
 def load_sound(fname):
@@ -42,7 +43,8 @@ def toggle_fullscreen():
 
 
 def rot_center(image, rect, angle):
-    """rotate an image while keeping its center"""
+    """rotate an image while keeping its center
+    returns an image and its rectangle"""
     rot_image = pg.transform.rotate(image, angle)
     rot_rect = rot_image.get_rect(center=rect.center)
     return rot_image, rot_rect
@@ -63,7 +65,8 @@ def get_timings(path, amount, fname=TIMINGS_FILENAME):
 
 
 def load_anim(folder, colorkey=None, timings_fname=TIMINGS_FILENAME):
-    """Loads images from the specified folder and returns a list of pygame image objects and their timings"""
+    """Loads images from the specified folder and returns a list of pygame image objects and their timings
+    returns a tuple of images and timings"""
     path = IMG_PATH+folder
     filenames = os.listdir(path)
     if timings_fname in filenames:
@@ -72,12 +75,12 @@ def load_anim(folder, colorkey=None, timings_fname=TIMINGS_FILENAME):
     timings = get_timings(path, frames_cnt, timings_fname)
     imgs = []
     for fname in filenames:
-        imgs.append(load_image(f'{folder}{os.path.sep}{fname}', colorkey)[0])
+        imgs.append(load_image(f'{folder}{os.path.sep}{fname}', colorkey))
     return imgs, timings
 
 
 def upscale_image(img, coefficient):
-    """:returns tuple: image, image.rect()"""
+    """returns image"""
     if coefficient % 2 == 0:
         while coefficient != 1:
             coefficient //= 2
@@ -85,19 +88,19 @@ def upscale_image(img, coefficient):
     else:
         base_rect = img.get_rect()
         img = pg.transform.smoothscale(img, (base_rect.width * coefficient, base_rect.height * coefficient))
-    return img, img.get_rect()
+    return img
 
 
-def upscale_anim(anim_list, coefficient):
+def upscale_anim(sprite_list, coefficient):
     """returns a list of images and their rectangles
     anim_list is a list of pygame.sprites"""
-    for el in anim_list:
-        el = upscale_image(el, coefficient)
-    rects = (i.get_rect() for i in anim_list)
-    return anim_list, rects
+    for i in range(len(sprite_list)):
+        sprite_list[i] = upscale_image(sprite_list[i], coefficient)
+    return sprite_list
 
 
 def load_soundlist(folder):
+    """loads a list of sounds and returns it"""
     path = SFX_PATH+folder
     filenames = os.listdir(path)
     ret = []
@@ -106,9 +109,10 @@ def load_soundlist(folder):
     return ret
 
 
-def collision_test(target, suspects):
+def collision_test(obj, targets):
+    """Test collistion"""
     collided_objects = []
-    for o in suspects:
-        if o.colliderect(target):
+    for o in targets:
+        if o.rect.colliderect(obj):
             collided_objects.append(o)
     return collided_objects
