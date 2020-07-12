@@ -117,19 +117,21 @@ class Game:
                            randint(speed_range[0], speed_range[1]))
 
     def print_debug_info(self):
-        text = self.font.render(f"X: {self.player.x} Y: {self.player.y} FPS: {self.fps} \t\t\t\t\t"
-                                f"Q - Water, E - Fire, R - Electricity, F - Void",
+        text = self.font.render(f"X: {self.player.x} Y: {self.player.y} FPS: {self.fps}     "
+                                f"Q - add orb, E - remove orb",
                                 True, (255, 255, 255), (0, 0, 0))
         data.screen.blit(text, (10, 10))
 
     def _draw_bg(self):
-        data.screen.fill((0, 0, 0))  # fill the void
+        data.screen.fill((50, 50, 50))  # fill the void
         # data.screen.blit(self.bg, self.bg_rect)  # draw the image
 
     def blit_rects(self):
         box = pg.Surface(self.player.rect.size)
         box.fill((255, 0, 255))
         data.screen.blit(box, self.player.rect)
+        box.fill((100, 100, 100))
+        data.screen.blit(box, self.player.anim.rect)
         for o in self.entities:
             box = pg.Surface(o.rect.size)
             box.fill((255, 255, 255))
@@ -144,8 +146,15 @@ class Game:
         data.save()
         sys.exit()
 
-    def cast_spell(self):
+    def add_orb(self):
         self.player.add_orb(choice(['green', 'blue', 'yellow']))
+
+    def del_orb(self):
+        self.player.del_orb()
+
+    def cast_spell(self):
+        pass
+
 
 if __name__ == '__main__':
     game = Game()

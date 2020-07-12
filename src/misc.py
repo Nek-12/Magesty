@@ -19,7 +19,7 @@ class Spritesheet:
 
     # Load a specific image from a specific rectangle
     def image_at(self, rectangle):
-        """Loads image from x,y,x+offset,y+offset"""
+        """Loads image from left,top,width,height"""
         rect = pg.Rect(rectangle)
         image = self._convert(pg.Surface(rect.size))  # TODO: test for None and -1 colorkeys
         image.blit(self.sheet, (0, 0), rect)
@@ -50,8 +50,9 @@ class Spritesheet:
         x, y = 0, 0
         rects = []
         for i in range(rows):  # on every row, append rectangles
+            x = 0
             for j in range(columns):  # append a rectangle
-                rects.append((x, y, x + img_size_x, y + img_size_y))  # append a tuple
+                rects.append((x, y, img_size_x, img_size_y))  # append a tuple
                 x += img_size_x  # get to the next position
             y += img_size_y  # get to the next row
         return self.images_at(rects)

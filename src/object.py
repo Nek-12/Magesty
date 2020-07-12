@@ -99,7 +99,7 @@ class Entity(Object):
 
 class Orb(Object):
     """A cool colorful orb that rotates around the player every frame"""
-    OFFSET = 1
+    OFFSET = 50
 
     def __init__(self, owner: Entity, color: str, x_offset, y_offset, angle_per_frame=0.05, ):
         """type can be: 'green', 'blue','yellow' offsets are from the owner's center"""
@@ -111,32 +111,31 @@ class Orb(Object):
         elif color == 'yellow':
             self.anim = data.yellow_orb_anim
         else:
-            raise ValueError("This type of orb doesn't exits:"+color)
+            raise ValueError("This type of orb doesn't exits: "+color)
         self.soundpack = None
         self.owner = owner
         self.alpha = 0
         self._dalpha = angle_per_frame  # RADIANS
-        super().__init__(self.anim.base_image, x_offset, y_offset)
+        super().__init__(self.anim.base_image, self.owner.rect.centerx+x_offset, self.owner.rect.centery+y_offset)
 
     def to_rel_pos(self, x_offset, y_offset):
-        self.rect.centerx = x_offset + self.owner.rect.centerx
-        self.rect.centery = y_offset + self.owner.rect.centery
+        self.x = x_offset + self.owner.rect.centerx
+        self.y = y_offset + self.owner.rect.centery
 
     def update(self):
         super().update()
         ocx = self.owner.rect.centerx
         ocy = self.owner.rect.centery
-        self.x = ocx
-        self.y = ocy
+        self.x = ocx+self.OFFSET
+        self.y = ocy+self.OFFSET
+        self.alpha += self._dalpha
         rotated_x = (math.cos(self.alpha) * (self.x - ocx) -
                      math.sin(self.alpha) * (self.y - ocy) + ocx)
         rotated_y = (math.sin(self.alpha) * (self.x - ocx) +
                      math.cos(self.alpha) * (self.y - ocy) + ocy)
         # the rotation is RELATIVE to the current rotation
-        self.alpha += self._dalpha
         self.x, self.y = rotated_x, rotated_y  # Rotate the orb around the owner's center
         self.anim.tick(self)
-
 
     def blit(self, screen):
         super().blit(screen)
@@ -159,26 +158,29 @@ class Player(Entity):
         self.anim = self.move_anims['d']
         self.idle_image = data.player_idle_image
         super().__init__(data.player_idle_image, 0, 0, data.player_max_hp, data.player_defence, data.player_speed)
-        self.rect.inflate_ip(-self.rect.width // 2, -self.rect.height // 2)
-        self.anim.rect.inflate_ip(-self.rect.width // 2, -self.rect.height // 2)
         self.orbs = []
 
     def _distribute_orbs(self):
         orbcnt = len(self.orbs)
-        dalpha = 2 * math.pi / orbcnt  # 360 degrees split into equal parts
-        for i in range(orbcnt):
-            self.orbs[i].to_rel_pos(x_offset=Orb.OFFSET * math.cos((i + 1) * dalpha),
-                                    y_offset=Orb.OFFSET * math.sin((i + 1) * dalpha))
+        if orbcnt > 1:
+            dalpha = 2 * math.pi / orbcnt  # 360 degrees split into equal parts
+            for i in range(orbcnt):
+                self.orbs[i].alpha = dalpha*i
             # teleport orbs to new coords
 
     def add_orb(self, color: str):
         self.orbs.append(Orb(self, color, 0, 0))  # add the orb
         self._distribute_orbs()  # get them into the right positions
 
-    def del_orb(self, color):
-        for i in range(len(self.orbs)):
-            if self.orbs[i].color == color:
-                self.orbs.pop(i)
+    def del_orb(self, color=None):
+        if color:
+            for i in range(len(self.orbs)):
+                if self.orbs[i].color == color:
+                    self.orbs.pop(i)
+                    break
+        else:
+            if self.orbs:
+                self.orbs.pop()
         self._distribute_orbs()
 
     def _select_anim(self):
@@ -187,7 +189,7 @@ class Player(Entity):
             s += 'u'
         elif self.moving_d:
             s += 'd'
-        if self.moving_l:
+        elif self.moving_l:
             s += 'l'
         elif self.moving_r:
             s += 'r'

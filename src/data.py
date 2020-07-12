@@ -22,7 +22,7 @@ SCREEN_HEIGHT = 720
 # Temporary values before items are introduced
 player_max_hp = 100
 player_defence = 1
-player_speed = 15
+player_speed = 10
 
 # PRE-INIT
 pg.mixer.pre_init()
@@ -34,9 +34,14 @@ screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.SCALED | pg.DOUBL
 swing_soundpack = SoundPack(load_soundlist('swing'))
 meat_soundpack = SoundPack(load_soundlist('meat'))
 music = load_sound('music.wav')
-player_move_anims = load_animations_dictionary('char_move', (0, 0, 32, 32), 4, -1, 'loop')
-for el in player_move_anims.values():  # for every SpriteAnim object
-    el.upscale_frames(4)  # make bigger
+player_anims_list = Spritesheet('mage-light.png', -1).load_table(48, 64)
+player_anims_timings = generate_timings(3,3)
+player_move_anims = {
+    'u': SpriteAnim((player_anims_list[0:3], player_anims_timings), 'loop'),
+    'r': SpriteAnim((player_anims_list[3:6], player_anims_timings), 'loop'),
+    'd': SpriteAnim((player_anims_list[6:9], player_anims_timings), 'loop'),
+    'l': SpriteAnim((player_anims_list[9:12], player_anims_timings), 'loop')
+}
 player_idle_image = player_move_anims['d'].base_image
 slash_anim = SpriteAnim(load_anim('slash_1', -1))
 slash_anim.upscale_frames(2)
@@ -75,7 +80,8 @@ def load(game, fname=SETTINGS_FNAME):
         pg.K_a: lambda: setattr(game.player, 'moving_l', True),
         pg.K_s: lambda: setattr(game.player, 'moving_d', True),
         pg.K_d: lambda: setattr(game.player, 'moving_r', True),
-        pg.K_SPACE: game.cast_spell
+        pg.K_e: game.add_orb,
+        pg.K_q: game.del_orb
     }
     # P.S. We can't use assignment in lambdas
     keyup_actions = {

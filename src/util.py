@@ -60,6 +60,10 @@ def get_timings(path, num_frames=0, *, fname=TIMINGS_FILENAME, frames_to_skip=DE
     return timings
 
 
+def generate_timings(num_frames: int, delay: int):
+    return tuple([delay] * num_frames)
+
+
 def load_anim(folder, colorkey=None, timings_fname=TIMINGS_FILENAME):
     """Loads images from the specified folder and returns a list of pygame image objects and their timings
     returns a tuple of images and timings"""

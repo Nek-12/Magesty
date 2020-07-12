@@ -56,6 +56,7 @@ class SpriteAnim(Animation):
     def tick(self, owner):
         """Call tick every frame"""
         super().tick(owner)
+        self.rect = owner.rect
         if self._cur >= len(self.frames):
             if self.looped:
                 self.restart(owner)
