@@ -1,5 +1,3 @@
-from abc import abstractmethod
-
 from src.util import *
 from abc import ABCMeta, abstractmethod
 
@@ -13,7 +11,7 @@ class Animation(metaclass=ABCMeta):
     @abstractmethod
     def tick(self, owner):
         if self.ended:
-            raise RuntimeError(f"Called tick after the animation ended, owner: {self.owner}")
+            raise RuntimeError(f"Called tick after the animation ended, owner: {owner}")
 
     @abstractmethod
     def restart(self, owner):
@@ -22,7 +20,7 @@ class Animation(metaclass=ABCMeta):
 
 class SpriteAnim(Animation):
     def __init__(self, anim_and_timings, *tags):
-        """anim_and_timings=(frames list, timings list), tags include: 'loop', 'reverse'
+        """animation=(frames list, timings list), tags include: 'loop', 'reverse'
         if reversed, the timings still must be supplied correctly"""
         super().__init__()
         if 'reverse' in tags:
@@ -79,7 +77,7 @@ class RotatingAnim(Animation):
     """Animation that rotates the sprite"""
     # TODO: Add speedup/slowdown
 
-    def __init__(self, owner, image, d_alpha, to_alpha=360, *tags):
+    def __init__(self, image, d_alpha, to_alpha=360, *tags):
         """args include: 'loop', 'reverse'"""
         super().__init__()
         self._base_image = image
@@ -90,7 +88,7 @@ class RotatingAnim(Animation):
         self.alpha = 0
         self.looped = 'loop' in tags  # detect if the animation is looped
 
-    def restart(self,owner):
+    def restart(self, owner):
         super().restart(owner)
         self.alpha = 0
         owner.image = self._base_image

@@ -1,15 +1,12 @@
 import pygame as pg
-import platform
 import os
-import sys
 
-SAFEZONE_MULTIPLIER = 3  # the MINIMUM amount the object
+SAFEZONE_MULTIPLIER = 3  # the MINIMUM amount of the times the object
 # can fit into the distance between it and newly spawned object
 DEFAULT_TIMING = 3  # The time between frames in animations
 TIMINGS_FILENAME = 'timings.txt'
 IMG_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'res', 'img')) + os.path.sep
 SFX_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'res', 'sfx')) + os.path.sep
-print(IMG_PATH + '\n' + SFX_PATH)
 
 
 def load_image(fname, colorkey=None):
@@ -34,12 +31,6 @@ def load_sound(fname):
     except pg.error as message:
         raise SystemExit(message)
     return sound
-
-
-def toggle_fullscreen():
-    """Supported only on linux"""
-    if platform.system() == 'Linux':
-        pg.display.toggle_fullscreen()
 
 
 def rot_center(image, rect, angle):
@@ -81,14 +72,15 @@ def load_anim(folder, colorkey=None, timings_fname=TIMINGS_FILENAME):
 
 def upscale_image(img, coefficient):
     """returns image"""
+    ret = img
     if coefficient % 2 == 0:
         while coefficient != 1:
             coefficient //= 2
-            img = pg.transform.scale2x(img)
+            ret = pg.transform.scale2x(ret)
     else:
         base_rect = img.get_rect()
-        img = pg.transform.smoothscale(img, (base_rect.width * coefficient, base_rect.height * coefficient))
-    return img
+        ret = pg.transform.smoothscale(img, (base_rect.width * coefficient, base_rect.height * coefficient))
+    return ret
 
 
 def upscale_anim(sprite_list, coefficient):
@@ -100,19 +92,10 @@ def upscale_anim(sprite_list, coefficient):
 
 
 def load_soundlist(folder):
-    """loads a list of sounds and returns it"""
+    """loads a list of soundpack and returns it"""
     path = SFX_PATH+folder
     filenames = os.listdir(path)
     ret = []
     for name in filenames:
         ret.append(load_sound(f"{folder}{os.path.sep}{name}"))
     return ret
-
-
-def collision_test(obj, targets):
-    """Test collistion"""
-    collided_objects = []
-    for o in targets:
-        if o.rect.colliderect(obj):
-            collided_objects.append(o)
-    return collided_objects

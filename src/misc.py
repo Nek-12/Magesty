@@ -1,5 +1,4 @@
-from src.util import *
-from random import randint, choice
+from random import randint
 from src.animation import *
 
 
@@ -11,11 +10,12 @@ class Spritesheet:
             self.colorkey = self.sheet.get_at((0, 0))
 
     def _convert(self, img):
+        ret = img
         if self.colorkey is not None:
-            img.set_colorkey(self.colorkey, pg.RLEACCEL)
-            return img.convert_alpha()
+            ret.set_colorkey(self.colorkey, pg.RLEACCEL)
+            return ret.convert_alpha()
         else:
-            return img.convert()
+            return ret.convert()
 
     # Load a specific image from a specific rectangle
     def image_at(self, rectangle):

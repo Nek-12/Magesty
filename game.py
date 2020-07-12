@@ -1,59 +1,53 @@
-
-from src.data import *
-from src.object import *
-from src.view import *
-from src.misc import *
+import src.data
+import sys
+from random import randint, choice
 from src.enemy import *
-
+from src.view import *
 assert pg.version.ver[0] == str(2), "Pygame version not compatible with the project"
 
 
 # Note: Scroll by several pixels per update. The flip() method is very slow.
 # Note: No cyclic dependencies, no going up hierarchy
 
+# TODO: Implement background moving to respond to a view
 # TODO: Fix diagonal player movement being faster by 1.4 using angles
 # TODO: Set font
 # TODO: Handle the problem with Windows DPI scaling
 # TODO: Add normal speed config for player
 # TODO: Fix the problem with sprites and colorkeys (transparent parts of images)
+# TODO: Separate handling of rects from handling of images. Causes screen tearing
 
 
 class Game:
     """Main game class"""
 
     def __init__(self):
-        pg.mixer.pre_init()
-        pg.init()
-        pg.mixer.set_num_channels(32)
-        infos = pg.display.Info()
-        self.screen_width, self.screen_height = 1280, 720
-        self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.SCALED | pg.DOUBLEBUF)
+        # infos = pg.display.Info()
         pg.display.set_caption("Ninja")
         pg.display.set_icon(load_image('icon.png'))
         self.bg = load_image("bg_test.png")
-        self.bg = upscale_image(self.bg, 4)  # animation consists of one frame
+        self.bg = upscale_image(self.bg, 4)
         self.bg_rect = self.bg.get_rect()
-        self.time = 1.0  # Adjust time speed
-        self.data = Data("settings.json")
-        self.player = Player(self)
-        self.view = View(self.player, self.screen)  # follow the player on the game's screen
+        self.time = 1.0  # Adjust time speed (for slowmo)
+        self.player = Player()
+        self.view = View(self.player, data.screen)  # follow the player on the game's screen
         self.clock = pg.time.Clock()
+        self.fps = data.defs['fps']
         self.font = pg.font.Font(None, 40)
-        self.fps = Data.fps
         self.mouse_pos = pg.mouse.get_pos()
         self.entities = pg.sprite.Group()  # store ALL the objects in the game except single-instance ones
 
     def main(self):
         """Run the game"""
-        self.data.load(self)
-        self.data.music.set_volume(self.data.volume)
-        self.data.music.play(-1, 0, 1000)
+        data.load(self)
+        data.music.set_volume(data.defs['volume'])
+        data.music.play(-1, 0, 1000)
         while True:
             self._process_events()
             # After every event
             self._update()
             self._draw()
-            self.clock.tick(self.data.fps)  # cap the fps
+            self.clock.tick(data.defs['fps'])  # cap the fps
             self.fps = int(self.clock.get_fps())
 
     def _process_events(self):
@@ -63,12 +57,12 @@ class Game:
                 sys.exit()
             elif event.type == pg.KEYDOWN:
                 try:
-                    self.data.keydown_actions[event.key]()  # execute specified keydown actions
+                    data.keydown_actions[event.key]()  # execute specified keydown actions
                 except KeyError:
                     pass
             elif event.type == pg.KEYUP:
                 try:
-                    self.data.keyup_actions[event.key]()
+                    data.keyup_actions[event.key]()
                 except KeyError:
                     pass
             # On every event
@@ -77,8 +71,8 @@ class Game:
         """Draw every object and refresh the screen"""
         self._draw_bg()
         self.blit_rects()
-        self.player.blit(self.screen)
-        self.entities.draw(self.screen)
+        self.player.blit(data.screen)
+        self.entities.draw(data.screen)
         self.print_debug_info()
         pg.display.flip()
 
@@ -90,7 +84,7 @@ class Game:
             self.entities.add(self.spawn_mob('crawler', self.player))
             # TODO: Not an interesting strategy
 
-    #    self.player.rect.x, self.player.rect.y = self.view.update((self.screen_width, self.screen_height),
+    #    self.player.rect.x, self.player.rect.y = self.view.update((data.screen_width, data.screen_height),
     #                                                              self.mouse_pos,
     #                                                             (self.player.rect.x, self.player.rect.y))
 
@@ -100,18 +94,16 @@ class Game:
             hp_range = (1, 10)
             defence_range = (0, 5)
             speed_range = (1, self.player.speed//2)
-            way_x, way_y = 0, 0
-            while way_x == 0 and way_y == 0:
-                way_x = choice((0, 1, -1))
-                way_y = choice((0, 1, -1))
+            way_x = choice((1, -1))
+            way_y = choice((1, -1))
             # TODO: I am too stupid do write a better algorithm
-            x = target.x + way_x * randint(target.rect.width * SAFEZONE_MULTIPLIER, self.screen_width)
-            y = target.y + way_y * randint(target.rect.height * SAFEZONE_MULTIPLIER, self.screen_height)
+            x = target.x + way_x * randint(target.rect.width * SAFEZONE_MULTIPLIER, data.SCREEN_WIDTH)
+            y = target.y + way_y * randint(target.rect.height * SAFEZONE_MULTIPLIER, data.SCREEN_HEIGHT)
             # the mob appears at a certain distance from the target,
             # but not less than a constant amount of its sizes
             # and no more than one screen away
-            return Crawler(self.data.crawler_spritepack,
-                           self.data.meat_soundpack,
+            return Crawler(data.crawler_spritepack,
+                           data.meat_soundpack,
                            target,
                            x,
                            y,
@@ -122,26 +114,33 @@ class Game:
     def print_debug_info(self):
         text = self.font.render(f"X: {self.player.x} Y: {self.player.y} FPS: {self.fps}",
                                 True, (255, 255, 255), (0, 0, 0))
-        self.screen.blit(text, (10, 10))
+        data.screen.blit(text, (10, 10))
 
     def _draw_bg(self):
-        self.screen.fill((0, 0, 0))  # fill the void
-        self.screen.blit(self.bg, self.bg_rect)  # draw the image
+        data.screen.fill((0, 0, 0))  # fill the void
+        # data.screen.blit(self.bg, self.bg_rect)  # draw the image
 
     def blit_rects(self):
         box = pg.Surface(self.player.rect.size)
         box.fill((255, 0, 255))
-        self.screen.blit(box, self.player.rect)
+        data.screen.blit(box, self.player.rect)
         box = pg.Surface(self.player.slash.rect.size)
         box.fill((0, 255, 0))
-        self.screen.blit(box, self.player.slash.rect)
+        data.screen.blit(box, self.player.slash.rect)
         for e in self.entities:
             box = pg.Surface(e.rect.size)
             box.fill((0, 0, 0))
-            self.screen.blit(box, e.rect)
+            data.screen.blit(box, e.rect)
+
+    @staticmethod
+    def quit():
+        data.save()
+        sys.exit()
+
+    def cast_spell(self):
+        self.player.attack(self.entities)
 
 
-# TODO: Implement background moving to respond to a view
 if __name__ == '__main__':
     game = Game()
     game.main()

@@ -1,6 +1,6 @@
 from src.misc import *
 from src.animation import *
-from src.data import Data
+import src.data as data
 
 
 class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and rectangle
@@ -35,6 +35,14 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
     def kill(self):
         # Whatever
         super().kill()  # Remove this object from ALL Groups it belongs to.
+
+    def collision_test(self, targets):
+        """Test collistion of obj and all the targets (list)"""
+        collided_objects = []
+        for o in targets:
+            if o.rect.colliderect(self):
+                collided_objects.append(o)
+        return collided_objects
 
 
 class Entity(Object):
@@ -80,9 +88,10 @@ class Entity(Object):
                 self.x += self.speed
             if self.moving_l:
                 self.x -= self.speed
-        self.stunned_for -= 1000//Data.fps  # TODO: Use ms, not frames!
-        if self.stunned_for < 0:
+        self.stunned_for -= data.MILLISECOND
+        if self.stunned_for <= 0:
             self.blocked = False
+            self.stunned_for = 0
 
 
 # class GUI(Object):
@@ -96,18 +105,16 @@ class Entity(Object):
 
 
 class Player(Entity):
-    def __init__(self, game):
-        self.game = game
-        data = self.game.data
+    def __init__(self):
+        """This function uses the values in data.py"""
         self.move_anims = data.player_move_anims
-        self.attack_anims = data.player_attack_anims
         self.anim = self.move_anims['d']
-        self.idle_image = data.player_sprite
-        super().__init__(data.player_sprite, 0, 0, data.player_max_hp, data.player_defence, data.player_speed)
+        self.idle_image = data.player_idle_image
+        super().__init__(data.player_idle_image, 0, 0, data.player_max_hp, data.player_defence, data.player_speed)
         self.rect.inflate_ip(-self.rect.width//2, -self.rect.height//2)
         self.anim.rect.inflate_ip(-self.rect.width // 2, -self.rect.height // 2)
         # TODO: Fix the rectangle problem, hitboxes are borked
-        self.slash = Slash(self, data.slash_anim, data.slash_soundpack)  # Create an attack
+        self.slash = Slash(self, data.slash_anim, data.swing_soundpack)  # Create an attack
 
     def _select_anim(self):
         s = ''
@@ -123,8 +130,8 @@ class Player(Entity):
 
     # TODO: Inefficient algorithm, optimize
 
-    def do_slash(self):
-        self.slash(self.game.entities)
+    def attack(self, targets):
+        self.slash(targets)
 
     def update(self):
         super().update()
@@ -149,12 +156,12 @@ class Player(Entity):
 class Slash(Object):
     """Creates an attack for the entity"""
 
-    def __init__(self, owner, anim_and_timings, sounds=None):
-        """Owner is the Entity doing a slash, anim_and_timings is returned by load_anim"""
-        self.anim = SpriteAnim(anim_and_timings)  # Load an animation
-        super().__init__(anim_and_timings[0][0], owner.x, owner.y)  # first frame
+    def __init__(self, owner, animation, soundpack=None):
+        """Owner is the Entity doing a slash, animation is returned by load_anim"""
+        self.anim = animation  # Load an animation
+        super().__init__(animation.base_image, owner.x, owner.y)  # first frame
         self.owner = owner  # store the reference
-        self.sounds_miss = sounds
+        self.sounds_miss = soundpack
         self.slashing = False
         self.rect.inflate_ip(-self.rect.width//3, -self.rect.height//3)
         self.anim.rect.inflate_ip(-self.rect.width // 2, -self.rect.height // 2)
@@ -166,7 +173,7 @@ class Slash(Object):
             if self.sounds_miss:
                 self.sounds_miss.play_random()  # play the sound at the animation start
             self.slashing = True
-            for i in collision_test(self, targets):
+            for i in self.collision_test(targets):
                 i.hit(5)
             self.anim.restart(self)
 
