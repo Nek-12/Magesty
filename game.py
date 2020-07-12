@@ -8,15 +8,13 @@ assert pg.version.ver[0] == str(2), "Pygame version not compatible with the proj
 
 # Note: Scroll by several pixels per update. The flip() method is very slow.
 # Note: No cyclic dependencies, no going up hierarchy
+# Separate handling of rects and updating from blitting. It can cause screen tearing
 
 # TODO: Implement background moving to respond to a view
 # TODO: Fix diagonal player movement being faster by 1.4 using angles
 # TODO: Set font
 # TODO: Handle the problem with Windows DPI scaling
-# TODO: Add normal speed config for player
-# TODO: Fix the problem with sprites and colorkeys (transparent parts of images)
-# TODO: Separate handling of rects from handling of images. Causes screen tearing
-# TODO: Fix the rectangle problem, hitboxes are borked
+# TODO: Add normal stats for player
 # TODO: Implement message queues
 
 
@@ -72,7 +70,7 @@ class Game:
 
     def _draw(self):
         """Draw every object and refresh the screen"""
-        self._draw_bg()
+        data.screen.fill((50, 50, 50))  # fill the void
         self.blit_rects()
         self.player.blit(data.screen)
         self.entities.draw(data.screen)
@@ -118,13 +116,9 @@ class Game:
 
     def print_debug_info(self):
         text = self.font.render(f"X: {self.player.x} Y: {self.player.y} FPS: {self.fps}     "
-                                f"Q - add orb, E - remove orb",
+                                f"E - add orb, Q  - remove orb",
                                 True, (255, 255, 255), (0, 0, 0))
         data.screen.blit(text, (10, 10))
-
-    def _draw_bg(self):
-        data.screen.fill((50, 50, 50))  # fill the void
-        # data.screen.blit(self.bg, self.bg_rect)  # draw the image
 
     def blit_rects(self):
         box = pg.Surface(self.player.rect.size)

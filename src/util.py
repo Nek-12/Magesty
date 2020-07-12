@@ -80,7 +80,7 @@ def load_anim(folder, colorkey=None, timings_fname=TIMINGS_FILENAME):
 
 
 def upscale_image(img, coefficient):
-    """returns image"""
+    """returns upscaled image. The argument is unchanged"""
     ret = img
     if coefficient % 2 == 0:
         while coefficient != 1:
@@ -94,7 +94,7 @@ def upscale_image(img, coefficient):
 
 def upscale_anim(sprite_list, coefficient):
     """returns a list of images and their rectangles
-    anim_list is a list of pygame.sprites"""
+    sprite_list is a list of pygame.sprites"""
     for i in range(len(sprite_list)):
         sprite_list[i] = upscale_image(sprite_list[i], coefficient)
     return sprite_list

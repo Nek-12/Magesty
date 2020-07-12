@@ -69,8 +69,9 @@ class SoundPack:
             self._i = 0
         return self._i
 
-    def set_volume(self, vol):
+    def set_volume(self, vol: float):
         """From 0.0 to 1.0"""
+        assert 1 > vol > 0, "Volume must be in the range from 0 to 1!"
         for el in self.sounds:
             el.set_volume(vol)
 
@@ -78,19 +79,23 @@ class SoundPack:
         return self.sounds[randint(0, len(self.sounds) - 1)]
 
     def get_next(self):
+        """Get the next sound"""
         self._increment()
         return self.sounds[self._i]
 
     def play_next(self):
+        """Plays the next sound"""
         self._increment()
         self.sounds[self._i].play()
 
     def play_random(self):
+        """Plays the random sound (doesn't increment the counter)"""
         self.sounds[randint(0, len(self.sounds) - 1)].play()
         # -1 to get the proper subscript for a list
 
 
 def load_animations_dictionary(folder, image_square, pics_on_sheet, colorkey, *args):
+    """Returns a dictionary where key = file name and value is an Animation"""
     path = IMG_PATH + folder
     ret = {}  # create a dictionary to store animations
     fnames = os.listdir(path)  # get filenames
@@ -101,12 +106,13 @@ def load_animations_dictionary(folder, image_square, pics_on_sheet, colorkey, *a
         sh = Spritesheet(f"{folder}/{fnames[i]}", colorkey)  # open a spritesheet, get the colorkey
         images = sh.load_strip(image_square, pics_on_sheet)  # load a list of sprites from the sheet
         anim = SpriteAnim((images, timings), *args)  # Create a new Animation with these args
-        ret[fnames[i].replace('.png', '')] = anim
+        ret[fnames[i].replace('.png', '')] = anim  # add an entry to the dict
         # Add this animation to a dictionary + direction (e.g. 'ld' = left-down (tuple))
     return ret
 
 
 def load_sprite_dictionary(folder, colorkey):
+    "Loads a dictionary where key = file name, and value is a Sprite"
     path = IMG_PATH + folder
     ret = {}
     fnames = os.listdir(path)  # get filenames
@@ -119,7 +125,7 @@ def load_animation_from_table(folder: str, filename: str,
                               img_size_x: int, img_size_y: int,
                               frames_to_skip=DEFAULT_TIMING,
                               timings_filename=TIMINGS_FILENAME, *tags) -> SpriteAnim:
-    """returns Sprite"""
+    """returns SpriteAnim"""
     sheet = Spritesheet(f'{folder}{SEP}{filename}', -1)  # load a spritesheet
     frames = sheet.load_table(img_size_x, img_size_y)  # get a list of frames
     timings = get_timings(f"{IMG_PATH}{folder}", len(frames), fname=timings_filename, frames_to_skip=frames_to_skip)

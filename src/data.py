@@ -30,12 +30,12 @@ pg.init()
 pg.mixer.set_num_channels(32)
 screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.SCALED | pg.DOUBLEBUF)
 
-# init
+# INIT
 swing_soundpack = SoundPack(load_soundlist('swing'))
 meat_soundpack = SoundPack(load_soundlist('meat'))
 music = load_sound('music.wav')
 player_anims_list = Spritesheet('mage-light.png', -1).load_table(48, 64)
-player_anims_timings = generate_timings(3,3)
+player_anims_timings = generate_timings(3, 3)
 player_move_anims = {
     'u': SpriteAnim((player_anims_list[0:3], player_anims_timings), 'loop'),
     'r': SpriteAnim((player_anims_list[3:6], player_anims_timings), 'loop'),
@@ -46,7 +46,7 @@ player_idle_image = player_move_anims['d'].base_image
 slash_anim = SpriteAnim(load_anim('slash_1', -1))
 slash_anim.upscale_frames(2)
 crawler_spritepack = load_sprite_dictionary('crawler', -1)
-for k, v in crawler_spritepack.items():  # for every image
+for k, v in crawler_spritepack.items():  # for every key, image
     crawler_spritepack[k] = upscale_image(v, 2)
 green_orb_anim = load_animation_from_table('orbs', 'Small_Poisonball_9x25.png', 9, 25, 1, TIMINGS_FILENAME, 'loop')
 green_orb_anim.upscale_frames(4)
@@ -63,7 +63,6 @@ def save(fname=SETTINGS_FNAME):
     global defs
     f = open(fname, 'w')
     json.dump(defs, f, indent=4)
-    pass
 
 
 def load(game, fname=SETTINGS_FNAME):
@@ -74,6 +73,7 @@ def load(game, fname=SETTINGS_FNAME):
         defs = json.load(f)
     except FileNotFoundError:
         print("The settings file was not found. Using default values...")
+    # dispatch table
     keydown_actions = {
         pg.K_F12: game.quit,
         pg.K_w: lambda: setattr(game.player, 'moving_u', True),

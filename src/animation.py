@@ -4,9 +4,9 @@ from abc import ABCMeta, abstractmethod
 
 class Animation(metaclass=ABCMeta):
     """A class that conveniently switches frames by a call.
-    Usage: call self.animation.tick() every frame -> frame changes if necessary"""
+    Usage: call self.animation.tick(owner) every frame -> frame changes if necessary"""
     def __init__(self):
-        self.ended = False  # If there is no owner, you can't animate!
+        self.ended = False
 
     @abstractmethod
     def tick(self, owner):
@@ -97,6 +97,7 @@ class RotatingAnim(Animation):
     def tick(self, owner):
         """Tick every frame"""
         super().tick(owner)
+        self.rect = owner.rect
         if self.alpha >= self.to_alpha:
             if self.looped:
                 self.restart(owner)

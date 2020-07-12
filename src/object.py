@@ -133,7 +133,6 @@ class Orb(Object):
                      math.sin(self.alpha) * (self.y - ocy) + ocx)
         rotated_y = (math.sin(self.alpha) * (self.x - ocx) +
                      math.cos(self.alpha) * (self.y - ocy) + ocy)
-        # the rotation is RELATIVE to the current rotation
         self.x, self.y = rotated_x, rotated_y  # Rotate the orb around the owner's center
         self.anim.tick(self)
 
@@ -186,13 +185,13 @@ class Player(Entity):
     def _select_anim(self):
         s = ''
         if self.moving_u:
-            s += 'u'
+            s = 'u'
         elif self.moving_d:
-            s += 'd'
+            s = 'd'
         elif self.moving_l:
-            s += 'l'
+            s = 'l'
         elif self.moving_r:
-            s += 'r'
+            s = 'r'
         return s
 
     # TODO: Inefficient algorithm, optimize
