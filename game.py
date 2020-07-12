@@ -1,4 +1,4 @@
-import src.data
+import src.data as data
 import sys
 from random import randint, choice
 from src.enemy import *
@@ -16,6 +16,8 @@ assert pg.version.ver[0] == str(2), "Pygame version not compatible with the proj
 # TODO: Add normal speed config for player
 # TODO: Fix the problem with sprites and colorkeys (transparent parts of images)
 # TODO: Separate handling of rects from handling of images. Causes screen tearing
+# TODO: Fix the rectangle problem, hitboxes are borked
+# TODO: Implement message queues
 
 
 class Game:
@@ -25,9 +27,9 @@ class Game:
         # infos = pg.display.Info()
         pg.display.set_caption("Ninja")
         pg.display.set_icon(load_image('icon.png'))
-        self.bg = load_image("bg_test.png")
-        self.bg = upscale_image(self.bg, 4)
-        self.bg_rect = self.bg.get_rect()
+        # self.bg = load_image("bg_test.png")
+        # self.bg = upscale_image(self.bg, 4)
+        # self.bg_rect = self.bg.get_rect()
         self.time = 1.0  # Adjust time speed (for slowmo)
         self.player = Player()
         self.view = View(self.player, data.screen)  # follow the player on the game's screen
@@ -36,6 +38,7 @@ class Game:
         self.font = pg.font.Font(None, 40)
         self.mouse_pos = pg.mouse.get_pos()
         self.entities = pg.sprite.Group()  # store ALL the objects in the game except single-instance ones
+        self.objects = pg.sprite.Group()  # store all the other things
 
     def main(self):
         """Run the game"""
@@ -54,7 +57,7 @@ class Game:
         """Handle the event queue"""
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                sys.exit()
+                self.quit()
             elif event.type == pg.KEYDOWN:
                 try:
                     data.keydown_actions[event.key]()  # execute specified keydown actions
@@ -73,6 +76,7 @@ class Game:
         self.blit_rects()
         self.player.blit(data.screen)
         self.entities.draw(data.screen)
+        self.objects.draw(data.screen)
         self.print_debug_info()
         pg.display.flip()
 
@@ -80,6 +84,7 @@ class Game:
         self.mouse_pos = pg.mouse.get_pos()
         self.player.update()
         self.entities.update()
+        self.objects.update()
         if len(self.entities) < 5:
             self.entities.add(self.spawn_mob('crawler', self.player))
             # TODO: Not an interesting strategy
@@ -112,7 +117,8 @@ class Game:
                            randint(speed_range[0], speed_range[1]))
 
     def print_debug_info(self):
-        text = self.font.render(f"X: {self.player.x} Y: {self.player.y} FPS: {self.fps}",
+        text = self.font.render(f"X: {self.player.x} Y: {self.player.y} FPS: {self.fps} \t\t\t\t\t"
+                                f"Q - Water, E - Fire, R - Electricity, F - Void",
                                 True, (255, 255, 255), (0, 0, 0))
         data.screen.blit(text, (10, 10))
 
@@ -124,13 +130,14 @@ class Game:
         box = pg.Surface(self.player.rect.size)
         box.fill((255, 0, 255))
         data.screen.blit(box, self.player.rect)
-        box = pg.Surface(self.player.slash.rect.size)
-        box.fill((0, 255, 0))
-        data.screen.blit(box, self.player.slash.rect)
-        for e in self.entities:
-            box = pg.Surface(e.rect.size)
-            box.fill((0, 0, 0))
-            data.screen.blit(box, e.rect)
+        for o in self.entities:
+            box = pg.Surface(o.rect.size)
+            box.fill((255, 255, 255))
+            data.screen.blit(box, o.rect)
+        for o in self.objects:
+            box = pg.Surface(o.rect.size)
+            box.fill((0, 255, 0))
+            data.screen.blit(box, o.rect)
 
     @staticmethod
     def quit():
@@ -138,8 +145,7 @@ class Game:
         sys.exit()
 
     def cast_spell(self):
-        self.player.attack(self.entities)
-
+        self.player.add_orb(choice(['green', 'blue', 'yellow']))
 
 if __name__ == '__main__':
     game = Game()

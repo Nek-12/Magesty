@@ -1,10 +1,12 @@
 from src.misc import *
 from src.animation import *
 import src.data as data
+import math
 
 
 class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and rectangle
     """Physics object"""
+
     def __init__(self, image, x, y):
         """x,y are global spawn coordinates"""
         super().__init__()
@@ -24,10 +26,10 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
     def rotate(self, angle):
         self.image, self.rect = rot_center(self.image, self.rect, angle)
 
-    def update(self, *args):  # super().update does nothing but can be called on Groups
+    def update(self):  # super().update does nothing but can be called on Groups
         super().update()
-        self.rect.x = self.x
-        self.rect.y = self.y  # TEMPORARY
+        self.rect.centerx = self.x
+        self.rect.centery = self.y  # TEMPORARY
 
     def blit(self, screen):
         screen.blit(self.image, self.rect)  # draw self
@@ -47,6 +49,7 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
 
 class Entity(Object):
     """Has hp, armor, speed, max_hp, and sub-Object"""
+
     def __init__(self, sprite, x, y, max_hp, armor, speed, hp=0):
         super().__init__(sprite, x, y)
         self.max_hp = max_hp
@@ -94,6 +97,51 @@ class Entity(Object):
             self.stunned_for = 0
 
 
+class Orb(Object):
+    """A cool colorful orb that rotates around the player every frame"""
+    OFFSET = 1
+
+    def __init__(self, owner: Entity, color: str, x_offset, y_offset, angle_per_frame=0.05, ):
+        """type can be: 'green', 'blue','yellow' offsets are from the owner's center"""
+        self.color = color
+        if color == 'green':
+            self.anim = data.green_orb_anim
+        elif color == 'blue':
+            self.anim = data.blue_orb_anim
+        elif color == 'yellow':
+            self.anim = data.yellow_orb_anim
+        else:
+            raise ValueError("This type of orb doesn't exits:"+color)
+        self.soundpack = None
+        self.owner = owner
+        self.alpha = 0
+        self._dalpha = angle_per_frame  # RADIANS
+        super().__init__(self.anim.base_image, x_offset, y_offset)
+
+    def to_rel_pos(self, x_offset, y_offset):
+        self.rect.centerx = x_offset + self.owner.rect.centerx
+        self.rect.centery = y_offset + self.owner.rect.centery
+
+    def update(self):
+        super().update()
+        ocx = self.owner.rect.centerx
+        ocy = self.owner.rect.centery
+        self.x = ocx
+        self.y = ocy
+        rotated_x = (math.cos(self.alpha) * (self.x - ocx) -
+                     math.sin(self.alpha) * (self.y - ocy) + ocx)
+        rotated_y = (math.sin(self.alpha) * (self.x - ocx) +
+                     math.cos(self.alpha) * (self.y - ocy) + ocy)
+        # the rotation is RELATIVE to the current rotation
+        self.alpha += self._dalpha
+        self.x, self.y = rotated_x, rotated_y  # Rotate the orb around the owner's center
+        self.anim.tick(self)
+
+
+    def blit(self, screen):
+        super().blit(screen)
+
+
 # class GUI(Object):
 #     """Interface elements, no AI"""
 #
@@ -111,10 +159,27 @@ class Player(Entity):
         self.anim = self.move_anims['d']
         self.idle_image = data.player_idle_image
         super().__init__(data.player_idle_image, 0, 0, data.player_max_hp, data.player_defence, data.player_speed)
-        self.rect.inflate_ip(-self.rect.width//2, -self.rect.height//2)
+        self.rect.inflate_ip(-self.rect.width // 2, -self.rect.height // 2)
         self.anim.rect.inflate_ip(-self.rect.width // 2, -self.rect.height // 2)
-        # TODO: Fix the rectangle problem, hitboxes are borked
-        self.slash = Slash(self, data.slash_anim, data.swing_soundpack)  # Create an attack
+        self.orbs = []
+
+    def _distribute_orbs(self):
+        orbcnt = len(self.orbs)
+        dalpha = 2 * math.pi / orbcnt  # 360 degrees split into equal parts
+        for i in range(orbcnt):
+            self.orbs[i].to_rel_pos(x_offset=Orb.OFFSET * math.cos((i + 1) * dalpha),
+                                    y_offset=Orb.OFFSET * math.sin((i + 1) * dalpha))
+            # teleport orbs to new coords
+
+    def add_orb(self, color: str):
+        self.orbs.append(Orb(self, color, 0, 0))  # add the orb
+        self._distribute_orbs()  # get them into the right positions
+
+    def del_orb(self, color):
+        for i in range(len(self.orbs)):
+            if self.orbs[i].color == color:
+                self.orbs.pop(i)
+        self._distribute_orbs()
 
     def _select_anim(self):
         s = ''
@@ -130,60 +195,20 @@ class Player(Entity):
 
     # TODO: Inefficient algorithm, optimize
 
-    def attack(self, targets):
-        self.slash(targets)
-
     def update(self):
         super().update()
-        if self.slash.slashing:
-            pass
-            self.blocked = True
+        direction = self._select_anim()
+        if direction:
+            self.anim = self.move_anims[direction]
+            self.anim.tick(self)
         else:
-            self.blocked = False
-            direction = self._select_anim()
-            if direction:
-                self.anim = self.move_anims[direction]
-                self.anim.tick(self)
-            else:
-                self.image = self.idle_image
-        self.slash.update()
+            self.image = self.idle_image
+        if self.orbs:
+            for orb in self.orbs:
+                orb.update()
 
     def blit(self, screen):
         super().blit(screen)
-        self.slash.blit(screen)  # draw the slash over self
-
-
-class Slash(Object):
-    """Creates an attack for the entity"""
-
-    def __init__(self, owner, animation, soundpack=None):
-        """Owner is the Entity doing a slash, animation is returned by load_anim"""
-        self.anim = animation  # Load an animation
-        super().__init__(animation.base_image, owner.x, owner.y)  # first frame
-        self.owner = owner  # store the reference
-        self.sounds_miss = soundpack
-        self.slashing = False
-        self.rect.inflate_ip(-self.rect.width//3, -self.rect.height//3)
-        self.anim.rect.inflate_ip(-self.rect.width // 2, -self.rect.height // 2)
-
-        # TODO: Why the hell the slash is always present? It should be created on call
-
-    def __call__(self, targets):  # If the object is called
-        if not self.slashing:
-            if self.sounds_miss:
-                self.sounds_miss.play_random()  # play the sound at the animation start
-            self.slashing = True
-            for i in self.collision_test(targets):
-                i.hit(5)
-            self.anim.restart(self)
-
-    def update(self):  # Every time we blit
-        if self.slashing:  # If slashing
-            self.rect.center = self.owner.rect.center  # Follow the player
-            self.anim.tick(self)  # advance the animation
-            if self.anim.ended:  # but if we stopped
-                self.slashing = False
-
-    def blit(self, screen):
-        if self.slashing:
-            super().blit(screen)
+        if self.orbs:
+            for orb in self.orbs:
+                orb.blit(screen)

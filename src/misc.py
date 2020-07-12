@@ -37,6 +37,25 @@ class Spritesheet:
                 for x in range(image_count)]
         return self.images_at(tups)
 
+    def load_table(self, img_size_x, img_size_y):
+        """Returns a list of animations from the spritesheet that contains several rows of images
+        images must have same size"""
+        sheet_rect = self.sheet.get_rect()
+        w = sheet_rect.width
+        h = sheet_rect.height
+        if h % img_size_y != 0 or w % img_size_x != 0:
+            raise ValueError("The spritesheet doesn't contain an integer number of images")
+        columns = w // img_size_x
+        rows = h // img_size_y
+        x, y = 0, 0
+        rects = []
+        for i in range(rows):  # on every row, append rectangles
+            for j in range(columns):  # append a rectangle
+                rects.append((x, y, x + img_size_x, y + img_size_y))  # append a tuple
+                x += img_size_x  # get to the next position
+            y += img_size_y  # get to the next row
+        return self.images_at(rects)
+
 
 class SoundPack:
     def __init__(self, soundlist):
@@ -66,12 +85,12 @@ class SoundPack:
         self.sounds[self._i].play()
 
     def play_random(self):
-        self.sounds[randint(0, len(self.sounds)-1)].play()
+        self.sounds[randint(0, len(self.sounds) - 1)].play()
         # -1 to get the proper subscript for a list
 
 
 def load_animations_dictionary(folder, image_square, pics_on_sheet, colorkey, *args):
-    path = IMG_PATH+folder
+    path = IMG_PATH + folder
     ret = {}  # create a dictionary to store animations
     fnames = os.listdir(path)  # get filenames
     timings = get_timings(path, pics_on_sheet)  # attempt to get animation timings for the folder
@@ -87,7 +106,7 @@ def load_animations_dictionary(folder, image_square, pics_on_sheet, colorkey, *a
 
 
 def load_sprite_dictionary(folder, colorkey):
-    path = IMG_PATH+folder
+    path = IMG_PATH + folder
     ret = {}
     fnames = os.listdir(path)  # get filenames
     for i in range(len(fnames)):
@@ -95,3 +114,12 @@ def load_sprite_dictionary(folder, colorkey):
     return ret
 
 
+def load_animation_from_table(folder: str, filename: str,
+                              img_size_x: int, img_size_y: int,
+                              frames_to_skip=DEFAULT_TIMING,
+                              timings_filename=TIMINGS_FILENAME, *tags) -> SpriteAnim:
+    """returns Sprite"""
+    sheet = Spritesheet(f'{folder}{SEP}{filename}', -1)  # load a spritesheet
+    frames = sheet.load_table(img_size_x, img_size_y)  # get a list of frames
+    timings = get_timings(f"{IMG_PATH}{folder}", len(frames), fname=timings_filename, frames_to_skip=frames_to_skip)
+    return SpriteAnim((frames, timings), *tags)

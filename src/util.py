@@ -1,12 +1,12 @@
 import pygame as pg
 import os
-
 SAFEZONE_MULTIPLIER = 3  # the MINIMUM amount of the times the object
 # can fit into the distance between it and newly spawned object
 DEFAULT_TIMING = 3  # The time between frames in animations
 TIMINGS_FILENAME = 'timings.txt'
-IMG_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'res', 'img')) + os.path.sep
-SFX_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'res', 'sfx')) + os.path.sep
+SEP = os.path.sep
+IMG_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'res', 'img')) + SEP
+SFX_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'res', 'sfx')) + SEP
 
 
 def load_image(fname, colorkey=None):
@@ -41,17 +41,22 @@ def rot_center(image, rect, angle):
     return rot_image, rot_rect
 
 
-def get_timings(path, amount, fname=TIMINGS_FILENAME):
+def get_timings(path, num_frames=0, *, fname=TIMINGS_FILENAME, frames_to_skip=DEFAULT_TIMING):
+    """gets timings from the file. If you don't specify the amount, the file won't be checked for errors
+    If no file is present, the function will return default generated timings based on the arguments provided"""
     try:
-        f = open(f'{path}/{fname}')  # try to get the file
+        f = open(f'{path}{SEP}{fname}')  # try to get the file
         timings_text = f.read().split(';')
         f.close()
         timings = tuple(int(i) for i in timings_text)  # convert to numeric list
-        if len(timings) != amount:
-            raise IndexError(f"Timings don't match images in {path}")
+        if num_frames:
+            if len(timings) != num_frames:
+                raise IndexError(f"Timings don't match images in {path}")
     except FileNotFoundError:  # If not found, use default
         print(f"Haven't found timings in {path} , using default")
-        timings = tuple([DEFAULT_TIMING] * amount)  # create a default timings list
+        if num_frames <= 0:
+            raise ValueError("Wrong amount of frames supplied")
+        timings = tuple([frames_to_skip] * num_frames)
     return timings
 
 
@@ -63,10 +68,10 @@ def load_anim(folder, colorkey=None, timings_fname=TIMINGS_FILENAME):
     if timings_fname in filenames:
         filenames.pop(filenames.index(timings_fname))
     frames_cnt = len(filenames)
-    timings = get_timings(path, frames_cnt, timings_fname)
+    timings = get_timings(path, frames_cnt, fname=timings_fname)
     imgs = []
     for fname in filenames:
-        imgs.append(load_image(f'{folder}{os.path.sep}{fname}', colorkey))
+        imgs.append(load_image(f'{folder}{SEP}{fname}', colorkey))
     return imgs, timings
 
 
@@ -97,5 +102,6 @@ def load_soundlist(folder):
     filenames = os.listdir(path)
     ret = []
     for name in filenames:
-        ret.append(load_sound(f"{folder}{os.path.sep}{name}"))
+        ret.append(load_sound(f"{folder}{SEP}{name}"))
     return ret
+
