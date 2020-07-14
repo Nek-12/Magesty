@@ -15,7 +15,7 @@ class Orb(Object):
         elif color == 'yellow':
             self.anim = data.yellow_orb_anim
         else:
-            raise ValueError("This type of orb doesn't exits: "+color)
+            raise ValueError(f"This type of orb doesn't exist: {color}")
         self.soundpack = None
         self.owner = owner
         self.distance = 0.0
@@ -61,6 +61,7 @@ class Player(Entity):
             dalpha = 2 * math.pi / orbcnt  # 360 degrees split into equal parts
             for i in range(orbcnt):
                 self.orbs[i].angle = dalpha*i
+                self.orbs[i].distance = 0
             # teleport orbs to new coords
 
     def add_orb(self, color: str):

@@ -14,3 +14,6 @@ class PlayerControllableAI(AI):
         self.moving_d = False
         self.moving_l = False
 
+    def update(self):
+        super().update()
+

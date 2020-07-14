@@ -79,7 +79,7 @@ class Game:
         self.player.update()
         self.entities.update()
         self.objects.update()
-        if len(self.entities) < 5:
+        if len(self.entities) < 7:
             self.entities.add(self.spawn_mob('crawler', self.player))
             # TODO: Not an interesting strategy
 
@@ -111,8 +111,7 @@ class Game:
                            randint(speed_range[0], speed_range[1]))
 
     def print_debug_info(self):
-        text = self.font.render(f"X: {self.player.x} Y: {self.player.y} FPS: {self.fps}     "
-                                f"E - add orb, Q  - remove orb",
+        text = self.font.render(f"X: {self.player.x} Y: {self.player.y} FPS: {self.fps}",
                                 True, (255, 255, 255), (0, 0, 0))
         data.screen.blit(text, (10, 10))
 
