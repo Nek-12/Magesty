@@ -1,16 +1,23 @@
 from src.object import *
-import math
+from src.util import SoundPack
+from src.player import Player
 
 
 class Crawler(Entity):
     """The most basic evil dude, melee attack, simple ai"""
 
-    def __init__(self, spritepack, hitsoundpack, target, x, y, max_hp, armor, speed, hp=0):
+    def __init__(self, spritepack: dict,
+                 hitsoundpack: SoundPack,
+                 target: Entity,
+                 x, y, max_hp, armor, speed, hp=0):
         self.spritepack = spritepack
-        super().__init__(spritepack['idle'], x, y, max_hp, armor, speed, hp)
         self.target = target
+        super().__init__(spritepack['idle'], x, y, ChasingTargetMeleeAI(self, target), max_hp, armor, speed, hp)
         self.hitsoundpack = hitsoundpack
-        self.stunned_for = 500
+        self.stun(500)
+        self.bash_duration_ms = 50
+        self.attack_cooldown = 1000
+        self.damage = 10
 
     def hit(self, hp):
         self.hitsoundpack.play_random()
@@ -21,26 +28,46 @@ class Crawler(Entity):
         self.hp = 0
         super().kill()
 
-    def ai(self):
-        self.stop()
-        if not self.rect.colliderect(self.target.rect):
-            self.angle = math.atan2((self.target.y - self.y), (self.target.x - self.x))
-            self.x += self.speed * math.cos(self.angle)
-            self.y += self.speed * math.sin(self.angle)
-        else:
-            self.target.hit(10)
-            self.stun(1000)
-
     def update(self):
         super().update()
-        if self.blocked:
+        d = self.ai.get_direction()
+        if self.stunned():
             self.image = self.spritepack['attack']
-            # TODO: No way to see the sprites
-        elif self.moving_u:
-            self.image = self.spritepack['up']
-        elif self.moving_d:
-            self.image = self.spritepack['down']
-        self.ai()
+        elif d:
+            self.image = self.spritepack[d]
+        else:
+            self.image = self.spritepack['idle']
 
     def blit(self, screen):
         super().blit(screen)
+
+
+class Wizard(Player):  # Yes this wizard is basically another player
+    """The basic wizard who can shoot fireballs at player"""
+
+    def __init__(self, x, y, target, reload_ms, max_hp: int, speed: int, shooting_range: int,
+                 armor=0):  # TODO: Add spritepack and soundpack to params, not const, messy!
+        self.shoot_range = shooting_range
+        """This function uses the values in data.py"""
+        self.stun(500)
+        super().__init__(x, y, ChasingTargetRangedAI(self, target, reload_ms), [], max_hp, speed, armor)
+        self.move_anims = data.Anims.wizard_move
+        self.anim = None
+        self.idle_image = data.wizard_idle_image
+        self.cooldown = 60  # TODO: Temporary
+        self._i = 0
+
+    def update(self):
+        super().update()
+        if self._i:
+            self._i -= 1  # try to reload
+        else:
+            self._i = self.cooldown
+            self.add_orb()
+
+    def blit(self, screen):
+        super().blit(screen)
+
+    def attack(self, target):
+        if self.orbs:
+            self.release_orb(angle_to(self, target))

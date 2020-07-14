@@ -1,7 +1,6 @@
 from src.util import *
 import json
-from src.misc import *
-from src.animation import *
+import enum
 
 # DEFAULT
 defs = {
@@ -12,6 +11,7 @@ defs = {
     'player_xp': 0,
     'difficulty': 1,
     'player_items': [],
+    'max_orbs_player': 3,
     'player_spells': ['flash', 'comet', 'wave', 'tornado'],
     'keys': {
         'up': pg.K_w,
@@ -29,7 +29,8 @@ defs = {
     }
 }
 SETTINGS_PATH = f'..{SEP}settings.json'
-MILLISECOND = 1000 // defs['fps_cap']
+MS_PER_FRAME = 1000 / defs['fps_cap']
+FRAMES_PER_MS = defs['fps_cap'] / 1000
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
@@ -39,6 +40,11 @@ player_defence = 1
 player_speed = 10
 
 # PRE-INIT
+# TODO: Not sure if this is a good idea.
+#  Probably bad. The problem is I somehow need to make objects
+#  add themselves to the global pool of objects, like a factory
+objects = pg.sprite.Group()
+entities = []
 screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.SCALED | pg.DOUBLEBUF)
 pg.display.set_caption("Ninja")
 pg.display.set_icon(load_image('icon.png'))
@@ -46,32 +52,66 @@ pg.mixer.pre_init()
 pg.init()
 pg.mixer.set_num_channels(32)
 
+
 # INIT
-swing_soundpack = SoundPack(load_soundlist('swing'))
-meat_soundpack = SoundPack(load_soundlist('meat'))
-music = load_sound('music.wav')
-player_anims_list = Spritesheet('mage-light.png', -1).load_table(48, 64)
-player_anims_timings = generate_timings(3, 3)
-player_move_anims = {
-    'u': SpriteAnim((player_anims_list[0:3], player_anims_timings), 'loop'),
-    'r': SpriteAnim((player_anims_list[3:6], player_anims_timings), 'loop'),
-    'd': SpriteAnim((player_anims_list[6:9], player_anims_timings), 'loop'),
-    'l': SpriteAnim((player_anims_list[9:12], player_anims_timings), 'loop')
-}
-player_idle_image = player_move_anims['d'].base_image
+class Anims:
+    player_move = generate_animation_dict(Spritesheet('mage-light.png', -1).load_table(48, 64),
+                                          generate_timings(3, 3))
+    wizard_move = generate_animation_dict(Spritesheet('mage-dark.png', -1).load_table(48, 64),
+                                          generate_timings(3, 3))
+    green_orb = load_anim_from_table('orbs', 'Small_Poisonball_9x25.png',
+                                     9, 25, -1, 1, TIMINGS_FILENAME, 'loop').upscale_frames(4)
+    yellow_orb = load_anim_from_table('orbs', 'Small_Fireball_10x26.png',
+                                      10, 26, -1, 1, TIMINGS_FILENAME, 'loop').upscale_frames(4)
+    blue_orb = load_anim_from_table('orbs', 'Small_Iceball_9x24.png',
+                                    9, 24, -1, 1, TIMINGS_FILENAME, 'loop').upscale_frames(4)
+    yellow_orb_fly = load_anim_from_table('orbs', 'Fireball_68x9.png',
+                                          68, 9, -1, 1, TIMINGS_FILENAME, 'loop').upscale_frames(3)
+    green_orb_fly = load_anim_from_table('orbs', 'Poisonball_65x9.png',
+                                         65, 9, -1, 1, TIMINGS_FILENAME, 'loop').upscale_frames(3)
+    blue_orb_fly = load_anim_from_table('orbs', 'Iceball_84x9.png',
+                                        84, 9, -1, 1, TIMINGS_FILENAME, 'loop').upscale_frames(3)
+    small_explosion = load_anim_from_table('explosions', 'vertical_small_100x100.png',
+                                           100, 100, -1, 1, TIMINGS_FILENAME).upscale_frames(4)
+    explosion = load_anim_from_table('explosions', 'explosion_100x100.png',
+                                     100, 100, -1, 1, TIMINGS_FILENAME)
+    vertical_explosion = load_anim_from_table('explosions', 'vertical_100x100.png',
+                                              100, 100, -1, 1, TIMINGS_FILENAME)
+    x_plosion = load_anim_from_table('explosions', 'x-plosion_100x100.png',
+                                     100, 100, -1, 1, TIMINGS_FILENAME)
+
+    vortex_explosion = load_anim_from_table('explosions', 'vortex_100x100.png',
+                                            100, 100, -1, 1, TIMINGS_FILENAME)
+
+
+class SFX:
+    swing = SoundPack(load_soundlist('swing'))
+    meat = SoundPack(load_soundlist('meat'))
+    music = load_sound('music.wav')
+    orb_release = load_sound('orb_release.wav')
+    orb_explode = load_sound('orb_explode.wav')
+
+
+player_idle_image = Anims.player_move['d'].base_image
+wizard_idle_image = Anims.wizard_move['d'].base_image
 # slash_anim = SpriteAnim(load_anim('slash_1', -1))
 # slash_anim.upscale_frames(2)
 crawler_spritepack = load_sprite_dictionary('crawler', -1)
 for k, v in crawler_spritepack.items():  # for every key, image
     crawler_spritepack[k] = upscale_image(v, 2)
-green_orb_anim = load_animation_from_table('orbs', 'Small_Poisonball_9x25.png', 9, 25, -1, 1, TIMINGS_FILENAME, 'loop')
-green_orb_anim.upscale_frames(4)
-yellow_orb_anim = load_animation_from_table('orbs', 'Small_Fireball_10x26.png', 10, 26, -1, 1, TIMINGS_FILENAME, 'loop')
-yellow_orb_anim.upscale_frames(4)
-blue_orb_anim = load_animation_from_table('orbs', 'Small_Iceball_9x24.png', 9, 24, -1, 1,  TIMINGS_FILENAME, 'loop')
-blue_orb_anim.upscale_frames(4)
+crawler_spritepack['l'] = pg.transform.flip(crawler_spritepack['d'], True, False)
+crawler_spritepack['r'] = crawler_spritepack['d']
+
 keydown_actions = None  # blank until we load()
 keyup_actions = None
+
+
+def to_frames(ms):
+    return ms * FRAMES_PER_MS
+
+
+def to_ms(frames):
+    return frames * MS_PER_FRAME
 
 
 def save(fname=SETTINGS_PATH):
@@ -90,21 +130,24 @@ def load(game, fname=SETTINGS_PATH):
     except FileNotFoundError:
         print("The settings file was not found. Using default values...")
     # dispatch table
+    mv = game.player.ai.move
+    st = game.player.ai.stop
     keydown_actions = {
         pg.K_F12: game.quit,
-        defs['keys']['up']: lambda: setattr(game.player, 'moving_u', True),
-        defs['keys']['left']: lambda: setattr(game.player, 'moving_l', True),
-        defs['keys']['down']: lambda: setattr(game.player, 'moving_d', True),
-        defs['keys']['right']: lambda: setattr(game.player, 'moving_r', True),
+        defs['keys']['up']: lambda: mv('up'),
+        defs['keys']['left']: lambda: mv('left'),
+        defs['keys']['down']: lambda: mv('down'),
+        defs['keys']['right']: lambda: mv('right'),
         defs['keys']['green orb']: lambda: game.add_orb('green'),
         defs['keys']['yellow orb']: lambda: game.add_orb('yellow'),
         defs['keys']['blue orb']: lambda: game.add_orb('blue'),
-        defs['keys']['remove orb']: game.del_orb
+        defs['keys']['remove orb']: game.del_orb,
+        defs['keys']['spell 1']: lambda: game.cast_spell('orb'),
     }
     # P.S. We can't use assignment in lambdas
     keyup_actions = {
-        defs['keys']['up']: lambda: setattr(game.player, 'moving_u', False),
-        defs['keys']['left']: lambda: setattr(game.player, 'moving_l', False),
-        defs['keys']['down']: lambda: setattr(game.player, 'moving_d', False),
-        defs['keys']['right']: lambda: setattr(game.player, 'moving_r', False),
+        defs['keys']['up']: lambda: st('up'),
+        defs['keys']['left']: lambda: st('left'),
+        defs['keys']['down']: lambda: st('down'),
+        defs['keys']['right']: lambda: st('right'),
     }

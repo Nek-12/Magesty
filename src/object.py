@@ -1,7 +1,7 @@
-from src.misc import *
-from src.animation import *
 import src.data as data
 import math
+from src.ai import *
+from src.util import *
 
 
 class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and rectangle
@@ -28,7 +28,7 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
         """rotates the image of the object and sets it angle (degrees) to the value
         If you don't supply an angle, the image will be rotated according to the internal angle"""
         if angle:
-            self.angle = angle*180/math.pi  # conver to radians
+            self.angle = math.radians(angle)
         self.image, self.rect = rot_center(self.image, self.rect, self.angle)
 
     def update(self):  # super().update does nothing but can be called on Groups
@@ -42,8 +42,10 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
     def kill(self):
         # Whatever
         super().kill()  # Remove this object from ALL Groups it belongs to.
+        if self in data.entities:
+            data.entities.remove(self)
 
-    def collision_test(self, targets):
+    def collision_test(self, targets: list):
         """Test collistion of obj and all the targets (list)"""
         collided_objects = []
         for o in targets:
@@ -55,17 +57,16 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
 class Entity(Object):
     """Has hp, armor, speed, max_hp, and sub-Object"""
 
-    def __init__(self, sprite, x, y, max_hp, armor, speed, hp=0):
+    def __init__(self, sprite, x, y, ai: AI, max_hp, armor, speed, hp=0):
         super().__init__(sprite, x, y)
+        self.ai = ai
         self.max_hp = max_hp
         self.armor = armor
         self.speed = speed
-        self.moving_u = False
-        self.moving_r = False
-        self.moving_d = False
-        self.moving_l = False
-        self.blocked = False
-        self.stunned_for = 0  # ms
+        self.bash_duration_ms = 0
+        self.self_attack_stun = 0
+        self._stunned_for = 0.0  # FRAMES
+        self.damage = 10  # TODO: Temporary
         if hp:
             self.hp = hp
         else:
@@ -73,11 +74,10 @@ class Entity(Object):
 
     def stun(self, ms):
         """Stun the Entity (make it idle)"""
-        self.blocked = True
-        self.stunned_for = ms
+        self._stunned_for = data.to_frames(ms)  # convert to frames
 
-    def stop(self):
-        self.moving_u, self.moving_r, self.moving_d, self.moving_l = False, False, False, False
+    def stunned(self):
+        return self._stunned_for > 0 or self._stunned_for == -1
 
     def hit(self, hp):
         self.hp -= hp
@@ -87,20 +87,17 @@ class Entity(Object):
     def update(self):  # overrides the Object.update() method
         """Movement and AI"""
         super().update()  # Call the Object update method
-        if not self.blocked:
-            if self.moving_u:
-                self.y -= self.speed
-            if self.moving_d:
-                self.y += self.speed
-            if self.moving_r:
-                self.x += self.speed
-            if self.moving_l:
-                self.x -= self.speed
-        self.stunned_for -= data.MILLISECOND
-        if self.stunned_for <= 0:
-            self.blocked = False
-            self.stunned_for = 0
+        if self._stunned_for > 0:
+            self._stunned_for -= 1  # subtract one frame
+        elif self._stunned_for == -1:
+            pass
+        else:
+            self.ai.update()  # if not stunned, allow the ai to work
 
+    def attack(self, target):
+        target.hit(self.damage)
+        target.stun(self.bash_duration_ms)
+        self.stun(self.self_attack_stun)  # to allow the target to escape
 
 # class GUI(Object):
 #     """Interface elements, no AI"""
@@ -110,4 +107,3 @@ class Entity(Object):
 #         super().__init__(sprite, x, y)
 #         self.on_click_action = on_click_action
 #         self.on_hover_action = on_hover_action
-
