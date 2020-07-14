@@ -123,10 +123,11 @@ def load_sprite_dictionary(folder, colorkey):
 
 def load_animation_from_table(folder: str, filename: str,
                               img_size_x: int, img_size_y: int,
+                              colorkey=None,
                               frames_to_skip=DEFAULT_TIMING,
                               timings_filename=TIMINGS_FILENAME, *tags) -> SpriteAnim:
     """returns SpriteAnim"""
-    sheet = Spritesheet(f'{folder}{SEP}{filename}', -1)  # load a spritesheet
+    sheet = Spritesheet(f'{folder}{SEP}{filename}', colorkey)  # load a spritesheet
     frames = sheet.load_table(img_size_x, img_size_y)  # get a list of frames
     timings = get_timings(f"{IMG_PATH}{folder}", len(frames), fname=timings_filename, frames_to_skip=frames_to_skip)
     return SpriteAnim((frames, timings), *tags)

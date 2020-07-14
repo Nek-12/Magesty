@@ -1,0 +1,29 @@
+{
+    "fps_cap": 60,
+    "volume": 0.1,
+    "player_level": 1,
+    "player_cash": 0,
+    "player_xp": 0,
+    "difficulty": 1,
+    "player_items": [],
+    "player_spells": [
+        "flash",
+        "comet",
+        "wave",
+        "tornado"
+    ],
+    "keys": {
+        "up": 119,
+        "down": 115,
+        "left": 97,
+        "right": 100,
+        "green orb": 113,
+        "yellow orb": 101,
+        "blue orb": 102,
+        "remove orb": 114,
+        "spell 1": 32,
+        "spell 2": 1,
+        "spell 3": 3,
+        "pause": 27
+    }
+}

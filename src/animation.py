@@ -126,4 +126,3 @@ class RotatingAnim(Animation):
 #
 #     def restart(self):
 #         self.alpha = self._base_alpha
-

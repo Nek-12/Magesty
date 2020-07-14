@@ -3,6 +3,8 @@ import sys
 from random import randint, choice
 from src.enemy import *
 from src.view import *
+from src.player import *
+
 assert pg.version.ver[0] == str(2), "Pygame version not compatible with the project"
 
 
@@ -22,20 +24,14 @@ class Game:
     """Main game class"""
 
     def __init__(self):
-        # infos = pg.display.Info()
-        pg.display.set_caption("Ninja")
-        pg.display.set_icon(load_image('icon.png'))
-        # self.bg = load_image("bg_test.png")
-        # self.bg = upscale_image(self.bg, 4)
-        # self.bg_rect = self.bg.get_rect()
         self.time = 1.0  # Adjust time speed (for slowmo)
         self.player = Player()
         self.view = View(self.player, data.screen)  # follow the player on the game's screen
         self.clock = pg.time.Clock()
-        self.fps = data.defs['fps']
+        self.fps = data.defs['fps_cap']
         self.font = pg.font.Font(None, 40)
         self.mouse_pos = pg.mouse.get_pos()
-        self.entities = pg.sprite.Group()  # store ALL the objects in the game except single-instance ones
+        self.entities = pg.sprite.Group()  # store ALL the entities
         self.objects = pg.sprite.Group()  # store all the other things
 
     def main(self):
@@ -48,7 +44,7 @@ class Game:
             # After every event
             self._update()
             self._draw()
-            self.clock.tick(data.defs['fps'])  # cap the fps
+            self.clock.tick(data.defs['fps_cap'])  # cap the fps
             self.fps = int(self.clock.get_fps())
 
     def _process_events(self):
@@ -96,7 +92,7 @@ class Game:
             # choose which way we'll go
             hp_range = (1, 10)
             defence_range = (0, 5)
-            speed_range = (1, self.player.speed//2)
+            speed_range = (1, self.player.speed // 2)
             way_x = choice((1, -1))
             way_y = choice((1, -1))
             # TODO: I am too stupid do write a better algorithm
@@ -121,27 +117,27 @@ class Game:
         data.screen.blit(text, (10, 10))
 
     def blit_rects(self):
-        box = pg.Surface(self.player.rect.size)
-        box.fill((255, 0, 255))
-        data.screen.blit(box, self.player.rect)
-        box.fill((100, 100, 100))
-        data.screen.blit(box, self.player.anim.rect)
+        def blit_box(obj, color):
+            box = pg.Surface(obj.rect.size)
+            box.fill(color)
+            data.screen.blit(box, obj.rect)
+
+        blit_box(self.player, (255, 255, 255))
+        # blit_box(self.player.anim, (0, 0, 0))
+        for orb in self.player.orbs:
+            blit_box(orb, (255, 0, 255))
         for o in self.entities:
-            box = pg.Surface(o.rect.size)
-            box.fill((255, 255, 255))
-            data.screen.blit(box, o.rect)
+            blit_box(o, (100, 100, 100))
         for o in self.objects:
-            box = pg.Surface(o.rect.size)
-            box.fill((0, 255, 0))
-            data.screen.blit(box, o.rect)
+            blit_box(o, (255, 0, 0))
 
     @staticmethod
     def quit():
         data.save()
         sys.exit()
 
-    def add_orb(self):
-        self.player.add_orb(choice(['green', 'blue', 'yellow']))
+    def add_orb(self, color=choice(['green', 'blue', 'yellow'])):
+        self.player.add_orb(color)
 
     def del_orb(self):
         self.player.del_orb()
