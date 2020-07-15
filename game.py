@@ -69,7 +69,7 @@ class Game:
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     data.keydown_actions[event.button]()
             except KeyError:
-                print(f'key error: {event}')
+                pass
             # On every event
 
     def _draw(self):

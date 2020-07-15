@@ -3,8 +3,8 @@ from src.animation import *
 from src.sound import *
 from os import sep
 # DEFAULT
+# AFTER CHANGING DON'T FORGET TO DELETE settings.json!
 defs = {
-    # AFTER CHANGING DON'T FORGET TO DELETE settings.json!
     'fps_cap': 60,
     'music_volume': 0.1,
     'sound_volume': 1,  # TODO: Noone uses it
