@@ -30,11 +30,11 @@ class Orb(Object):
         self.free = self.owner is None
         self.exploded = False
         self._dalpha = 0.05
+        self.timer = 1000 * data.FRAMES_PER_MS  # lives for 2 seconds
         super().__init__(self.anim.base_image, self.owner.rect.centerx + x_offset, self.owner.rect.centery + y_offset)
 
     def release(self, angle):
         self.anim = self.fly_anim
-        self.anim.rotate_frames(math.degrees(angle))
         self.anim.restart(self)
         self.angle = angle
         self.free = True
@@ -57,6 +57,9 @@ class Orb(Object):
         if self.exploded:
             pass
         elif self.free:
+            self.timer -= 1
+            if not self.timer:
+                self.explode()
             for obj in self.collision_test(data.entities):
                 if obj is not self.owner:  # ignore the owner
                     self.explode()
@@ -110,9 +113,7 @@ class Player(Entity):
                 orb.distance = 0
             # teleport orbs to new coords
 
-    def add_orb(self, color: str = ''):
-        if not color:
-            color = choice(('green', 'yellow', 'blue'))
+    def add_orb(self, color):
         if len(self.orbs) < self.max_orbs:
             orb = Orb(color, 0, 0, self)
             self.orbs.append(orb)  # add the orb
@@ -145,6 +146,7 @@ class Player(Entity):
                 self.anim = self.move_anims[direction]
                 self.anim.tick(self)
             else:
+
                 self.image = self.idle_image
         for orb in self.orbs:
             orb.update()

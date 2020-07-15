@@ -2,8 +2,9 @@ from src.util import *
 import src.data as data
 from src.object import *
 
+
 class Spell(Object):
-    def __init__(self, owner, animation, soundpack, damage: int, power: int, orbs: list[Orb]):
+    def __init__(self, owner, animation, soundpack, damage: int, power: int, orbs: list):
         """Owner is the entity who cast the spell"""
         self.anim = animation  # Load an animation
         self.damage = damage
@@ -21,16 +22,3 @@ class Spell(Object):
 
     def blit(self, screen):
         super().blit(screen)
-
-
-class Slash(Spell):
-    """Lightning strike"""
-
-    def __init__(self, owner: Entity, damage: int, power: int, orbs: list[Orb]):
-        super().__init__(owner, data.slash_anim, data.swing_soundpack, damage, power, orbs)
-
-    def __call__(self, targets):  # If the object is called
-        pass
-
-    def update(self):  # Every time we blit
-        super().blit(data.screen)

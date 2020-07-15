@@ -27,8 +27,6 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
     def rotate(self, angle=0):
         """rotates the image of the object and sets it angle (degrees) to the value
         If you don't supply an angle, the image will be rotated according to the internal angle"""
-        if angle:
-            self.angle = math.radians(angle)
         self.image, self.rect = rot_center(self.image, self.rect, self.angle)
 
     def update(self):  # super().update does nothing but can be called on Groups
@@ -42,8 +40,6 @@ class Object(pg.sprite.Sprite):  # derive from Sprite to get the image and recta
     def kill(self):
         # Whatever
         super().kill()  # Remove this object from ALL Groups it belongs to.
-        if self in data.entities:
-            data.entities.remove(self)
 
     def collision_test(self, targets: list):
         """Test collistion of obj and all the targets (list)"""

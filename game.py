@@ -4,19 +4,22 @@ from src.enemy import *
 from src.view import *
 from src.player import *
 from src.ai import *
+from random import randint, choice
 assert pg.version.ver[0] == str(2), "Pygame version not compatible with the project"
 
 
 # Note: Scroll by several pixels per update. The flip() method is very slow.
 # Note: No cyclic dependencies, no going up hierarchy
 # Separate handling of rects and updating from blitting. It can cause screen tearing
-
+# Don't poke into other systems while writing code, use base class's methods
+# Work on decoupling parts of code as much as you can
 # TODO: Implement background moving to respond to a view
 # TODO: Fix diagonal player movement being faster by 1.4 using angles
 # TODO: Set font
 # TODO: Handle the problem with Windows DPI scaling
 # TODO: Add normal stats for player
 # TODO: Implement message queues
+# TODO: The pg.Group shit is blitting only the image! It doesn't call the other update methods!
 
 
 class Game:
@@ -27,26 +30,28 @@ class Game:
         self.player = Player(data.SCREEN_WIDTH // 2,
                              data.SCREEN_HEIGHT // 2,
                              KeybordControllableAI(None),
-                             [], 1000000, 7, 0)
+                             [], 1000000, 7, 1)  # TODO: Temp
         self.player.ai.owner = self.player
-        data.entities.append(self.player)
+        data.entities.add(self.player)
         self.view = View(self.player, data.screen)  # follow the player on the game's screen
         self.clock = pg.time.Clock()
-        self.fps = data.defs['fps_cap']
+        self.fps = data.FPS
         self.font = pg.font.Font(None, 40)
         self.mouse_pos = pg.mouse.get_pos()
 
     def main(self):
         """Run the game"""
         data.load(self)
-        data.SFX.music.set_volume(data.defs['volume'])
+        data.SFX.music.set_volume(data.defs['music_volume'])
         data.SFX.music.play(-1, 0, 1000)
+        data.entities.add(self.spawn_mob(self.player, 'crawler', 1000, 200))
+        data.entities.add(self.spawn_mob(self.player, 'wizard', 1000, 500))
         while True:
             self._process_events()
             # After every event
             self._update()
             self._draw()
-            self.clock.tick(data.defs['fps_cap'])  # cap the fps
+            self.clock.tick(data.FPS)  # cap the fps
             self.fps = int(self.clock.get_fps())
 
     def _process_events(self):
@@ -70,27 +75,22 @@ class Game:
         """Draw every object and refresh the screen"""
         data.screen.fill((50, 50, 50))  # fill the void
         self.blit_rects()
-        for e in data.entities:
-            e.blit(data.screen)
+        self.player.blit(data.screen)  # TODO: The player is blit two times!
+        data.entities.draw(data.screen)
         data.objects.draw(data.screen)
         self.print_debug_info()
         pg.display.flip()
 
     def _update(self):
         self.mouse_pos = pg.mouse.get_pos()
-        self.player.update()
-        for e in data.entities:
-            e.update()
+        data.entities.update()
         data.objects.update()
-        if len(data.entities) < 7:
-            data.entities.append(self.spawn_mob(self.player))
-            # TODO: Not an interesting strategy
 
     #    self.player.rect.x, self.player.rect.y = self.view.update((data.screen_width, data.screen_height),
     #                                                              self.mouse_pos,
     #                                                             (self.player.rect.x, self.player.rect.y))
 
-    def spawn_mob(self, target, mob_type=''):
+    def spawn_mob(self, target, mob_type='', x=None, y=None):
         if not mob_type:
             mob_type = choice(('crawler', 'wizard'))
         hp_range = (1, 10)
@@ -99,8 +99,9 @@ class Game:
         way_x = choice((1, -1))  # choose which way we'll go
         way_y = choice((1, -1))
         # TODO: I am too stupid do write a better algorithm
-        x = target.x + way_x * randint(target.rect.width * SAFEZONE_MULTIPLIER, data.SCREEN_WIDTH)
-        y = target.y + way_y * randint(target.rect.height * SAFEZONE_MULTIPLIER, data.SCREEN_HEIGHT)
+        if x is None or y is None:
+            x = target.x + way_x * randint(target.rect.width*3, data.SCREEN_WIDTH//2)
+            y = target.y + way_y * randint(target.rect.height*3, data.SCREEN_HEIGHT//2)
         # the mob appears at a certain distance from the target,
         # but not less than a constant amount of its sizes
         # and no more than one screen away
@@ -116,7 +117,7 @@ class Game:
         elif mob_type == 'wizard':
             return Wizard(x, y, target, 2000,  # TODO: TEMPORARY
                           randint(hp_range[0], hp_range[1]),
-                          randint(speed_range[0], speed_range[1]), 1000)  # TODO: Temporary
+                          randint(speed_range[0], speed_range[1]), 300)  # TODO: Temporary
 
     def print_debug_info(self):
         text = self.font.render(f"X: {self.player.x} Y: {self.player.y} FPS: {self.fps}",
@@ -129,7 +130,6 @@ class Game:
             box.fill(color)
             data.screen.blit(box, obj.rect)
 
-        blit_box(self.player, (255, 255, 255))
         for orb in self.player.orbs:
             blit_box(orb, (255, 0, 255))
         for o in data.entities:
@@ -151,7 +151,6 @@ class Game:
         self.player.pop_orb()
 
     def cast_spell(self, spell: str):
-        # TODO: Do NOT involve player in spells!
         if spell == 'orb':
             angle = angle_to(pg.Vector2(self.mouse_pos), self.player)
             self.player.release_orb(angle)

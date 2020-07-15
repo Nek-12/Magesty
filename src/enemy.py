@@ -1,6 +1,7 @@
 from src.object import *
-from src.util import SoundPack
+from src.sound import SoundPack
 from src.player import Player
+from random import choice
 
 
 class Crawler(Entity):
@@ -15,8 +16,9 @@ class Crawler(Entity):
         super().__init__(spritepack['idle'], x, y, ChasingTargetMeleeAI(self, target), max_hp, armor, speed, hp)
         self.hitsoundpack = hitsoundpack
         self.stun(500)
-        self.bash_duration_ms = 50
+        self.bash_duration_ms = 150
         self.attack_cooldown = 1000
+        self.self_attack_stun = 1000
         self.damage = 10
 
     def hit(self, hp):
@@ -48,13 +50,12 @@ class Wizard(Player):  # Yes this wizard is basically another player
     def __init__(self, x, y, target, reload_ms, max_hp: int, speed: int, shooting_range: int,
                  armor=0):  # TODO: Add spritepack and soundpack to params, not const, messy!
         self.shoot_range = shooting_range
-        """This function uses the values in data.py"""
         self.stun(500)
         super().__init__(x, y, ChasingTargetRangedAI(self, target, reload_ms), [], max_hp, speed, armor)
         self.move_anims = data.Anims.wizard_move
         self.anim = None
         self.idle_image = data.wizard_idle_image
-        self.cooldown = 60  # TODO: Temporary
+        self.cooldown = 120  # TODO: Temporary
         self._i = 0
 
     def update(self):
@@ -63,7 +64,7 @@ class Wizard(Player):  # Yes this wizard is basically another player
             self._i -= 1  # try to reload
         else:
             self._i = self.cooldown
-            self.add_orb()
+            self.add_orb(choice(('green', 'yellow', 'blue')))
 
     def blit(self, screen):
         super().blit(screen)
