@@ -5,6 +5,7 @@ from src.view import *
 from src.player import *
 from src.ai import *
 from random import randint, choice
+
 assert pg.version.ver[0] == str(2), "Pygame version not compatible with the project"
 
 
@@ -19,7 +20,8 @@ assert pg.version.ver[0] == str(2), "Pygame version not compatible with the proj
 # TODO: Handle the problem with Windows DPI scaling
 # TODO: Add normal stats for player
 # TODO: Implement message queues
-# TODO: The pg.Group shit is blitting only the image! It doesn't call the other update methods!
+# TODO: As it is, the current object system is broken completely. Implement separate class for objects that handles
+# creation and destruction gracefully.
 
 
 class Game:
@@ -57,25 +59,23 @@ class Game:
     def _process_events(self):
         """Handle the event queue"""
         for event in pg.event.get():
-            if event.type == pg.QUIT:
-                self.quit()
-            elif event.type == pg.KEYDOWN:
-                try:
+            try:
+                if event.type == pg.QUIT:
+                    self.quit()
+                elif event.type == pg.KEYDOWN:
                     data.keydown_actions[event.key]()  # execute specified keydown actions
-                except KeyError:
-                    pass
-            elif event.type == pg.KEYUP:
-                try:
+                elif event.type == pg.KEYUP:
                     data.keyup_actions[event.key]()
-                except KeyError:
-                    pass
+                elif event.type == pg.MOUSEBUTTONDOWN:
+                    data.keydown_actions[event.button]()
+            except KeyError:
+                print(f'key error: {event}')
             # On every event
 
     def _draw(self):
         """Draw every object and refresh the screen"""
         data.screen.fill((50, 50, 50))  # fill the void
         self.blit_rects()
-        self.player.blit(data.screen)  # TODO: The player is blit two times!
         data.entities.draw(data.screen)
         data.objects.draw(data.screen)
         self.print_debug_info()
@@ -100,8 +100,8 @@ class Game:
         way_y = choice((1, -1))
         # TODO: I am too stupid do write a better algorithm
         if x is None or y is None:
-            x = target.x + way_x * randint(target.rect.width*3, data.SCREEN_WIDTH//2)
-            y = target.y + way_y * randint(target.rect.height*3, data.SCREEN_HEIGHT//2)
+            x = target.x + way_x * randint(target.rect.width * 3, data.SCREEN_WIDTH // 2)
+            y = target.y + way_y * randint(target.rect.height * 3, data.SCREEN_HEIGHT // 2)
         # the mob appears at a certain distance from the target,
         # but not less than a constant amount of its sizes
         # and no more than one screen away
@@ -115,7 +115,7 @@ class Game:
                            randint(defence_range[0], defence_range[1]),
                            randint(speed_range[0], speed_range[1]))
         elif mob_type == 'wizard':
-            return Wizard(x, y, target, 2000,  # TODO: TEMPORARY
+            return Wizard(x, y, target, 500,  # TODO: TEMPORARY
                           randint(hp_range[0], hp_range[1]),
                           randint(speed_range[0], speed_range[1]), 300)  # TODO: Temporary
 

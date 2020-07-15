@@ -4,6 +4,7 @@ from src.sound import *
 from os import sep
 # DEFAULT
 defs = {
+    # AFTER CHANGING DON'T FORGET TO DELETE settings.json!
     'fps_cap': 60,
     'music_volume': 0.1,
     'sound_volume': 1,  # TODO: Noone uses it
@@ -23,9 +24,9 @@ defs = {
         'yellow orb': pg.K_e,
         'blue orb': pg.K_f,
         'remove orb': pg.K_r,
-        'spell 1': pg.K_SPACE,
-        'spell 2': pg.BUTTON_LEFT,
-        'spell 3': pg.BUTTON_RIGHT,  # TODO: Confirm that these represent mouse buttons, i sorta guessed it
+        'spell 1': pg.BUTTON_LEFT,
+        'spell 2': pg.BUTTON_RIGHT,
+        'spell 3': pg.K_SPACE,
         'pause': pg.K_ESCAPE,
     }
 }

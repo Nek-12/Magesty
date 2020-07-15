@@ -78,7 +78,7 @@ class Entity(Object):
     def hit(self, hp):
         self.hp -= hp
         if self.hp < 0:
-            super().kill()  # Kill the object
+            self.kill()  # Kill the object
 
     def update(self):  # overrides the Object.update() method
         """Movement and AI"""

@@ -72,3 +72,6 @@ class Wizard(Player):  # Yes this wizard is basically another player
     def attack(self, target):
         if self.orbs:
             self.release_orb(angle_to(self, target))
+
+    def kill(self):
+        super().kill()

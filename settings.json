@@ -23,9 +23,9 @@
         "yellow orb": 101,
         "blue orb": 102,
         "remove orb": 114,
-        "spell 1": 32,
-        "spell 2": 1,
-        "spell 3": 3,
+        "spell 1": 1,
+        "spell 2": 3,
+        "spell 3": 32,
         "pause": 27
     }
 }

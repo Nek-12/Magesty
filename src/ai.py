@@ -1,6 +1,7 @@
 import pygame as pg
 from abc import ABCMeta, abstractmethod
 from src.util import distance
+from src.data import FRAMES_PER_MS
 
 
 class AI(metaclass=ABCMeta):
@@ -23,17 +24,19 @@ class AI(metaclass=ABCMeta):
 
     def chase_target(self):
         self._norm_v = pg.Vector2((self.target.x - self.owner.x), (self.target.y - self.owner.y)).normalize()
+        self.owner.x += self.owner.speed * self._norm_v.x
+        self.owner.y += self.owner.speed * self._norm_v.y
 
     @abstractmethod
     def update(self, *args):
-        self.owner.x += self.owner.speed * self._norm_v.x
-        self.owner.y += self.owner.speed * self._norm_v.y
+        pass
 
     def move(self, direction: str):
         pass
 
-    def stop(self, direction: str):
-        pass
+    def stop(self, direction: str = None):
+        if direction is None:
+            self._norm_v = pg.Vector2()
 
 
 class KeybordControllableAI(AI):
@@ -49,14 +52,20 @@ class KeybordControllableAI(AI):
         super().__init__(owner)
 
     def move(self, direction: str):
-        self._norm_v += pg.Vector2(self.DIRECTIONS[direction]) # rotate the vector
+        self._norm_v += pg.Vector2(self.DIRECTIONS[direction])  # rotate the vector
 
-    def stop(self, direction: str):
-        self._norm_v -= pg.Vector2(self.DIRECTIONS[direction])  # subtract the reversed direction
+    def stop(self, direction: str = None):
+        if direction is None:
+            super().stop()
+        else:
+            self._norm_v -= pg.Vector2(self.DIRECTIONS[direction])  # subtract the reversed direction
 
     def update(self):
-        super().update()
+        self.owner.x += self.owner.speed * self._norm_v.x
+        self.owner.y += self.owner.speed * self._norm_v.y
 
+
+# TODO: Broken
 
 class ChasingTargetMeleeAI(AI):
     def __init__(self, owner, target):
@@ -75,11 +84,17 @@ class ChasingTargetRangedAI(AI):
         super().__init__(owner)
         assert self.owner.shoot_range > 100, f"Range is {self.owner.shoot_range}"
         self.target = target
-        self.reload_time = reload_ms
+        self.reload_time = reload_ms * FRAMES_PER_MS
+        self._i = self.reload_time
 
     def update(self):
+        self._i -= 1
         if distance(self.owner, self.target) > self.owner.shoot_range:
             self.chase_target()
+        elif self._i > 0:
+            self.stop()
         else:
             self.owner.attack(self.target)
+            self._i = self.reload_time
         super().update()
+

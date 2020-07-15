@@ -117,6 +117,7 @@ class Player(Entity):
         if len(self.orbs) < self.max_orbs:
             orb = Orb(color, 0, 0, self)
             self.orbs.append(orb)  # add the orb
+            data.objects.add(orb)
             self._distribute_orbs()  # get them into the right positions
 
     def pop_orb(self):
@@ -124,7 +125,6 @@ class Player(Entity):
         if self.orbs:
             orb = self.orbs.pop()
             self._distribute_orbs()
-            orb.add(data.objects)
             orb.explode()
             return orb
         return None
@@ -134,7 +134,6 @@ class Player(Entity):
         if self.orbs:
             orb = self.orbs.pop()
             orb.release(angle)  # orb begins to fly
-            orb.add(data.objects)  # Orb adds itself to objects, becoming independent
             return orb
         return None
 
@@ -148,13 +147,14 @@ class Player(Entity):
             else:
 
                 self.image = self.idle_image
-        for orb in self.orbs:
-            orb.update()
 
     def blit(self, screen):
         super().blit(screen)
-        for orb in self.orbs:
-            orb.blit(screen)
 
     def attack(self, target):
         super().attack(target)
+
+    def kill(self):
+        super().kill()
+        for orb in self.orbs:
+            orb.explode()
